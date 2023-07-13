@@ -191,7 +191,7 @@ type IfExpr struct {
 }
 
 func (self IfExpr) Repr() string {
-	return fmt.Sprintf("(if %s then %s else %s)", self.Cond.Repr(), self.ThenBranch.Repr(), self.ElseBranch.Repr())
+	return fmt.Sprintf("(if %s %s %s)", self.Cond.Repr(), self.ThenBranch.Repr(), self.ElseBranch.Repr())
 }
 
 // array
