@@ -1,5 +1,10 @@
 # FEEL.go
-Interpretere of the FEEL language(Friendly Enough Expression Language) in go
+
+The interpreter of the FEEL language(Friendly Enough Expression
+Language) in go, FEEL is broadly used in DMN and BPMN to provide rule
+engine and script support, the FEEL.go module can be imported into
+other go projects or used as command line executable as FEEL
+interpreter.
 
 ## Build
 * run `make build` to build feel interpreter bin/feel
