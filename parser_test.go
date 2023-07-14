@@ -62,7 +62,7 @@ func TestIfExpression(t *testing.T) {
 	`
 	ast, err := ParseString(input)
 	assert.Nil(err)
-	assert.Equal("(if (> a 3) then \"yes\" else \"no\")", ast.Repr())
+	assert.Equal("(if (> a 3) \"yes\" \"no\")", ast.Repr())
 }
 
 func TestForExpression(t *testing.T) {
