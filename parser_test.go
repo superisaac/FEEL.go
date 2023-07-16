@@ -173,3 +173,16 @@ func TestMapValue(t *testing.T) {
 	assert.Equal(TokenEOF, une.token.Kind)
 	assert.Equal([]string{"name", "string"}, une.expects)
 }
+
+func TestTemporal(t *testing.T) {
+	assert := assert.New(t)
+
+	input := `@"2023-06-07"`
+	ast, err := ParseString(input)
+	assert.Nil(err)
+	assert.Equal(`@"2023-06-07"`, ast.Repr())
+
+	node, ok := ast.(*TemporalNode)
+	assert.True(ok)
+	assert.Equal("2023-06-07", node.Content())
+}

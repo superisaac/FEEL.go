@@ -74,3 +74,10 @@ func TestEvalUnaryTests(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, v, true)
 }
+
+func TestTemporalValue(t *testing.T) {
+	input := `@"2023-06-07".day`
+	v, err := EvalString(input)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, v, ParseNumber(7))
+}

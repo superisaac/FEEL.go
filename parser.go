@@ -373,7 +373,7 @@ func (self *Parser) singleElement() (AST, error) {
 	case TokenString:
 		return self.parseStringNode()
 	case TokenTemporal:
-		return self.parseTemporalValue()
+		return self.parseTemporalNode()
 	case "(":
 		return self.parseBracketOrRange()
 	case "[":
@@ -581,10 +581,10 @@ func (self *Parser) parseMapKey() (string, error) {
 	}
 }
 
-func (self *Parser) parseTemporalValue() (AST, error) {
+func (self *Parser) parseTemporalNode() (AST, error) {
 	v := self.CurrentToken().Value
 	self.scanner.Next()
-	return &TemporalVal{Value: v}, nil
+	return &TemporalNode{Value: v}, nil
 }
 
 func (self *Parser) parseMapNode() (AST, error) {

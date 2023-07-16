@@ -149,8 +149,8 @@ func (self StringNode) Eval(intp *Interpreter) (interface{}, error) {
 	return self.Content(), nil
 }
 
-func (self TemporalVal) Eval(intp *Interpreter) (interface{}, error) {
-	return self.Value, nil
+func (self TemporalNode) Eval(intp *Interpreter) (interface{}, error) {
+	return ParseTemporalValue(self.Content())
 }
 
 func (self Var) Eval(intp *Interpreter) (interface{}, error) {
@@ -239,6 +239,12 @@ func (self DotOp) Eval(intp *Interpreter) (interface{}, error) {
 			return val, nil
 		} else {
 			return nil, NewEvalError(-4000, "map key error", fmt.Sprintf("cannot find map attribute %s", self.Attr))
+		}
+	} else if obj, ok := leftVal.(HasAttrs); ok {
+		if v, ok := obj.GetAttr(self.Attr); ok {
+			return normalizeValue(v), nil
+		} else {
+			return nil, NewEvalError(-4001, "attr error", fmt.Sprintf("cannot get attr %s", self.Attr))
 		}
 	} else {
 		//return nil, NewEvalError(-4001, "type mismatch", "is not map")

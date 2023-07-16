@@ -16,6 +16,10 @@ type AST interface {
 	Eval(*Interpreter) (interface{}, error)
 }
 
+type HasAttrs interface {
+	GetAttr(name string) (interface{}, bool)
+}
+
 // binary operator
 type Binop struct {
 	Op    string
@@ -154,12 +158,16 @@ func (self MapNode) Repr() string {
 }
 
 // temporal
-type TemporalVal struct {
+type TemporalNode struct {
 	Value string
 }
 
-func (self TemporalVal) Repr() string {
+func (self TemporalNode) Repr() string {
 	return self.Value
+}
+
+func (self TemporalNode) Content() string {
+	return self.Value[2 : len(self.Value)-1]
 }
 
 // range
