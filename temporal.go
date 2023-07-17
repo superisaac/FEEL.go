@@ -14,9 +14,17 @@ import (
 
 var ErrParseTemporal = errors.New("fail to parse temporal value")
 
+type HasTime interface {
+	Time() time.Time
+}
+
 // time
 type FEELTime struct {
 	t time.Time
+}
+
+func (self FEELTime) Time() time.Time {
+	return self.t
 }
 
 var timePatterns = []string{
@@ -71,6 +79,10 @@ type FEELDate struct {
 	t time.Time
 }
 
+func (self FEELDate) Time() time.Time {
+	return self.t
+}
+
 func (self FEELDate) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "year":
@@ -107,6 +119,10 @@ func ParseDate(timeStr string) (*FEELDate, error) {
 // Date and Time
 type FEELDateTime struct {
 	t time.Time
+}
+
+func (self FEELDateTime) Time() time.Time {
+	return self.t
 }
 
 func (self FEELDateTime) GetAttr(name string) (interface{}, bool) {
@@ -305,56 +321,21 @@ func installDateTimeFunctions(prelude *Prelude) {
 		return &FEELDate{t: time.Now()}, nil
 	})
 
-	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v interface{}) (interface{}, error) {
-		switch t := v.(type) {
-		case *FEELDate:
-			return t.t.Weekday(), nil
-		case *FEELTime:
-			return t.t.Weekday(), nil
-		case *FEELDateTime:
-			return t.t.Weekday(), nil
-		}
-		return nil, errors.New("type mismatch")
-
+	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v HasTime) (interface{}, error) {
+		return v.Time().Weekday(), nil
 	}, "date")
 
-	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v interface{}) (interface{}, error) {
-		switch t := v.(type) {
-		case *FEELDate:
-			return t.t.YearDay(), nil
-		case *FEELTime:
-			return t.t.YearDay(), nil
-		case *FEELDateTime:
-			return t.t.YearDay(), nil
-		}
-		return nil, errors.New("type mismatch")
+	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v HasTime) (interface{}, error) {
+		return v.Time().YearDay(), nil
 	}, "date")
 
-	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v interface{}) (interface{}, error) {
-		switch t := v.(type) {
-		case *FEELDate:
-			_, week := t.t.ISOWeek()
-			return week, nil
-		case *FEELTime:
-			_, week := t.t.ISOWeek()
-			return week, nil
-		case *FEELDateTime:
-			_, week := t.t.ISOWeek()
-			return week, nil
-		}
-		return nil, errors.New("type mismatch")
+	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v HasTime) (interface{}, error) {
+		_, week := v.Time().ISOWeek()
+		return week, nil
 	}, "date")
 
-	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v interface{}) (interface{}, error) {
-		switch t := v.(type) {
-		case *FEELDate:
-			return t.t.Month(), nil
-		case *FEELTime:
-			return t.t.Month(), nil
-		case *FEELDateTime:
-			return t.t.Month(), nil
-		}
-		return nil, errors.New("type mismatch")
+	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v HasTime) (interface{}, error) {
+		return v.Time().Month(), nil
 	}, "date")
 
 	// TODO: abs, last day of month
