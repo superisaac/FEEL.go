@@ -29,7 +29,7 @@ func (self FEELTime) Time() time.Time {
 
 var timePatterns = []string{
 	"15:04:05",
-	"15:04:05+07:00",
+	"15:04:05-07:00",
 	"15:04:05@MST",
 }
 
@@ -44,12 +44,6 @@ func ParseTime(temporalStr string) (*FEELTime, error) {
 
 func (self FEELTime) GetAttr(name string) (interface{}, bool) {
 	switch name {
-	case "year":
-		return self.t.Year(), true
-	case "month":
-		return self.t.Month(), true
-	case "day":
-		return self.t.Day(), true
 	case "hour":
 		return self.t.Hour(), true
 	case "minute":
@@ -71,7 +65,7 @@ func (self FEELTime) MarshalJSON() ([]byte, error) {
 }
 
 func (self FEELTime) String() string {
-	return self.t.Format("15:04:05+07:00")
+	return self.t.Format("15:04:05-07:00")
 }
 
 // Date
@@ -159,7 +153,7 @@ func (self FEELDateTime) String() string {
 
 var dateTimePatterns = []string{
 	"2006-01-02T15:04:05",
-	"2006-01-02T15:04:05+07:00",
+	"2006-01-02T15:04:05-07:00",
 	"2006-01-02T15:04:05@MST",
 }
 
@@ -324,6 +318,24 @@ func ParseTemporalValue(temporalStr string) (interface{}, error) {
 
 // builtin functions
 func installDateTimeFunctions(prelude *Prelude) {
+	// conversions
+	prelude.BindNativeFunc("date", func(intp *Interpreter, frm string) (interface{}, error) {
+		return ParseDate(frm)
+	}, "from")
+
+	prelude.BindNativeFunc("time", func(intp *Interpreter, frm string) (interface{}, error) {
+		return ParseTime(frm)
+	}, "from")
+
+	prelude.BindNativeFunc("date and time", func(intp *Interpreter, frm string) (interface{}, error) {
+		return ParseDateTime(frm)
+	}, "from")
+
+	prelude.BindNativeFunc("duration", func(intp *Interpreter, frm string) (interface{}, error) {
+		return ParseDuration(frm)
+	}, "from")
+
+	// temporal functions
 	prelude.BindNativeFunc("now", func(intp *Interpreter) (interface{}, error) {
 		return &FEELDateTime{t: time.Now()}, nil
 	})
@@ -355,5 +367,5 @@ func installDateTimeFunctions(prelude *Prelude) {
 		return newDur, nil
 	}, "dur")
 
-	// TODO: last day of month
+	// TODO: last day of month()
 }
