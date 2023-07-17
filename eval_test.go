@@ -80,4 +80,24 @@ func TestTemporalValue(t *testing.T) {
 	v, err := EvalString(input)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, v, ParseNumber(7))
+
+	input1 := `@"2023-06-07T15:08:39".second`
+	v1, err := EvalString(input1)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, v1, ParseNumber(39))
+
+	dt, err := ParseDateTime(`2023-06-07T15:04:05`)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, dt.t.Hour(), 15)
+	assert.DeepEqual(t, dt.t.Second(), 5)
+
+	dur, err := ParseDuration("P12Y2M")
+	assert.NilError(t, err)
+	assert.Equal(t, 12, dur.Year)
+	assert.Equal(t, 2, dur.Month)
+
+	dur1, err := ParseDuration("P7M")
+	assert.NilError(t, err)
+	assert.Equal(t, 0, dur1.Year)
+	assert.Equal(t, 7, dur1.Month)
 }
