@@ -4,7 +4,9 @@ package feel
 // refer to https://docs.camunda.io/docs/components/modeler/feel/language-guide/feel-temporal-expressions/
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"time"
@@ -46,8 +48,22 @@ func (self FEELTime) GetAttr(name string) (interface{}, bool) {
 		return self.t.Minute(), true
 	case "second":
 		return self.t.Second(), true
+	case "timezone":
+		zoneName, _ := self.t.Zone()
+		return zoneName, true
+	case "timezone offset":
+		_, offset := self.t.Zone()
+		return offset, true
 	}
 	return nil, false
+}
+
+func (self FEELTime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(self.String())
+}
+
+func (self FEELTime) String() string {
+	return self.t.Format("15:04:05+07:00")
 }
 
 // Date
@@ -65,6 +81,14 @@ func (self FEELDate) GetAttr(name string) (interface{}, bool) {
 		return self.t.Day(), true
 	}
 	return nil, false
+}
+
+func (self FEELDate) String() string {
+	return self.t.Format("2006-01-02")
+}
+
+func (self FEELDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(self.String())
 }
 
 var datePatterns = []string{
@@ -99,8 +123,22 @@ func (self FEELDateTime) GetAttr(name string) (interface{}, bool) {
 		return self.t.Minute(), true
 	case "second":
 		return self.t.Second(), true
+	case "timezone":
+		zoneName, _ := self.t.Zone()
+		return zoneName, true
+	case "timezone offset":
+		_, offset := self.t.Zone()
+		return offset, true
 	}
 	return nil, false
+}
+
+func (self FEELDateTime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(self.String())
+}
+
+func (self FEELDateTime) String() string {
+	return self.t.Format("2006-01-02T15:04:05@MST")
 }
 
 var dateTimePatterns = []string{
@@ -143,6 +181,40 @@ func (self FEELDuration) GetAttr(name string) (interface{}, bool) {
 		return self.Second, true
 	}
 	return nil, false
+}
+
+func (self FEELDuration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(self.String())
+}
+
+func (self FEELDuration) String() string {
+	sYear, sMonth, sDay, sHour, sMinute, sSecond := "", "", "", "", "", ""
+
+	if self.Year != 0 {
+		sYear = fmt.Sprintf("%dY", self.Year)
+	}
+	if self.Month != 0 {
+		sMonth = fmt.Sprintf("%dM", self.Month)
+	}
+	if self.Day != 0 {
+		sDay = fmt.Sprintf("%dD", self.Day)
+	}
+
+	if self.Hour != 0 {
+		sDay = fmt.Sprintf("%dH", self.Hour)
+	}
+	if self.Minute != 0 {
+		sDay = fmt.Sprintf("%dM", self.Minute)
+	}
+	if self.Second != 0 {
+		sDay = fmt.Sprintf("%dS", self.Second)
+	}
+	if sYear != "" || sMonth != "" {
+		return fmt.Sprintf("P%s%s", sYear, sMonth)
+	} else {
+		return fmt.Sprintf("P%sT%s%s%s", sDay, sHour, sMinute, sSecond)
+	}
+
 }
 
 var yearmonthDurationPattern = regexp.MustCompile(`^P((\d+)Y)?((\d+)M)?$`)
@@ -221,4 +293,69 @@ func ParseTemporalValue(temporalStr string) (interface{}, error) {
 
 	return ParseDuration(temporalStr)
 
+}
+
+// builtin functions
+func installDateTimeFunctions(prelude *Prelude) {
+	prelude.BindNativeFunc("now", func(intp *Interpreter) (interface{}, error) {
+		return &FEELDateTime{t: time.Now()}, nil
+	})
+
+	prelude.BindNativeFunc("today", func(intp *Interpreter) (interface{}, error) {
+		return &FEELDate{t: time.Now()}, nil
+	})
+
+	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v interface{}) (interface{}, error) {
+		switch t := v.(type) {
+		case *FEELDate:
+			return t.t.Weekday(), nil
+		case *FEELTime:
+			return t.t.Weekday(), nil
+		case *FEELDateTime:
+			return t.t.Weekday(), nil
+		}
+		return nil, errors.New("type mismatch")
+
+	}, "date")
+
+	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v interface{}) (interface{}, error) {
+		switch t := v.(type) {
+		case *FEELDate:
+			return t.t.YearDay(), nil
+		case *FEELTime:
+			return t.t.YearDay(), nil
+		case *FEELDateTime:
+			return t.t.YearDay(), nil
+		}
+		return nil, errors.New("type mismatch")
+	}, "date")
+
+	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v interface{}) (interface{}, error) {
+		switch t := v.(type) {
+		case *FEELDate:
+			_, week := t.t.ISOWeek()
+			return week, nil
+		case *FEELTime:
+			_, week := t.t.ISOWeek()
+			return week, nil
+		case *FEELDateTime:
+			_, week := t.t.ISOWeek()
+			return week, nil
+		}
+		return nil, errors.New("type mismatch")
+	}, "date")
+
+	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v interface{}) (interface{}, error) {
+		switch t := v.(type) {
+		case *FEELDate:
+			return t.t.Month(), nil
+		case *FEELTime:
+			return t.t.Month(), nil
+		case *FEELDateTime:
+			return t.t.Month(), nil
+		}
+		return nil, errors.New("type mismatch")
+	}, "date")
+
+	// TODO: abs, last day of month
 }

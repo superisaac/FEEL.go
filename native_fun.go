@@ -58,6 +58,7 @@ func GetPrelude() *Prelude {
 func (self *Prelude) Load() {
 	self.BindNativeFunc("not", nativeNot, "v")
 	self.BindNativeFunc("bind", nativeBind, "varname", "value")
+	installDateTimeFunctions(self)
 }
 
 func (self *Prelude) Bind(name string, value interface{}) {
