@@ -173,6 +173,7 @@ func ParseDateTime(temporalStr string) (*FEELDateTime, error) {
 }
 
 type FEELDuration struct {
+	Neg    bool
 	Year   int
 	Month  int
 	Day    int
@@ -205,7 +206,10 @@ func (self FEELDuration) MarshalJSON() ([]byte, error) {
 
 func (self FEELDuration) String() string {
 	sYear, sMonth, sDay, sHour, sMinute, sSecond := "", "", "", "", "", ""
-
+	sNeg := ""
+	if self.Neg {
+		sNeg = "-"
+	}
 	if self.Year != 0 {
 		sYear = fmt.Sprintf("%dY", self.Year)
 	}
@@ -226,29 +230,33 @@ func (self FEELDuration) String() string {
 		sDay = fmt.Sprintf("%dS", self.Second)
 	}
 	if sYear != "" || sMonth != "" {
-		return fmt.Sprintf("P%s%s", sYear, sMonth)
+		return fmt.Sprintf("%sP%s%s", sNeg, sYear, sMonth)
 	} else {
-		return fmt.Sprintf("P%sT%s%s%s", sDay, sHour, sMinute, sSecond)
+		return fmt.Sprintf("%sP%sT%s%s%s", sNeg, sDay, sHour, sMinute, sSecond)
 	}
 
 }
 
-var yearmonthDurationPattern = regexp.MustCompile(`^P((\d+)Y)?((\d+)M)?$`)
-var timeDurationPatteren = regexp.MustCompile(`^P((\d+)D)?T((\d+)H)?((\d+)M)?((\d+)S)?$`)
+var yearmonthDurationPattern = regexp.MustCompile(`^(\-?)P((\d+)Y)?((\d+)M)?$`)
+var timeDurationPatteren = regexp.MustCompile(`^(\-?)P((\d+)D)?T((\d+)H)?((\d+)M)?((\d+)S)?$`)
 
 func ParseDuration(temporalStr string) (*FEELDuration, error) {
 	// parse year month duration
 	if submatches := yearmonthDurationPattern.FindStringSubmatch(temporalStr); submatches != nil {
 		dur := &FEELDuration{}
 		if submatches[1] != "" {
-			y, err := strconv.ParseInt(submatches[2], 10, 64)
+			dur.Neg = true
+		}
+
+		if submatches[2] != "" {
+			y, err := strconv.ParseInt(submatches[3], 10, 64)
 			if err != nil {
 				return nil, err
 			}
 			dur.Year = int(y)
 		}
-		if submatches[3] != "" {
-			m, err := strconv.ParseInt(submatches[4], 10, 64)
+		if submatches[4] != "" {
+			m, err := strconv.ParseInt(submatches[5], 10, 64)
 			if err != nil {
 				return nil, err
 			}
@@ -261,28 +269,31 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 	if submatches := timeDurationPatteren.FindStringSubmatch(temporalStr); submatches != nil {
 		dur := &FEELDuration{}
 		if submatches[1] != "" {
-			v, err := strconv.ParseInt(submatches[2], 10, 64)
+			dur.Neg = true
+		}
+		if submatches[2] != "" {
+			v, err := strconv.ParseInt(submatches[3], 10, 64)
 			if err != nil {
 				return nil, err
 			}
 			dur.Day = int(v)
 		}
-		if submatches[3] != "" {
-			v, err := strconv.ParseInt(submatches[4], 10, 64)
+		if submatches[4] != "" {
+			v, err := strconv.ParseInt(submatches[5], 10, 64)
 			if err != nil {
 				return nil, err
 			}
 			dur.Hour = int(v)
 		}
-		if submatches[5] != "" {
-			v, err := strconv.ParseInt(submatches[6], 10, 64)
+		if submatches[6] != "" {
+			v, err := strconv.ParseInt(submatches[7], 10, 64)
 			if err != nil {
 				return nil, err
 			}
 			dur.Minute = int(v)
 		}
-		if submatches[7] != "" {
-			v, err := strconv.ParseInt(submatches[8], 10, 64)
+		if submatches[8] != "" {
+			v, err := strconv.ParseInt(submatches[9], 10, 64)
 			if err != nil {
 				return nil, err
 			}
@@ -338,5 +349,11 @@ func installDateTimeFunctions(prelude *Prelude) {
 		return v.Time().Month(), nil
 	}, "date")
 
-	// TODO: abs, last day of month
+	prelude.BindNativeFunc("abs", func(intp *Interpreter, dur *FEELDuration) (interface{}, error) {
+		newDur := *dur
+		newDur.Neg = false
+		return newDur, nil
+	}, "dur")
+
+	// TODO: last day of month
 }
