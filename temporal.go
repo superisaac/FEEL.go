@@ -18,6 +18,10 @@ type HasTime interface {
 	Time() time.Time
 }
 
+type HasDate interface {
+	Date() time.Time
+}
+
 // time
 type FEELTime struct {
 	t time.Time
@@ -73,7 +77,7 @@ type FEELDate struct {
 	t time.Time
 }
 
-func (self FEELDate) Time() time.Time {
+func (self FEELDate) Date() time.Time {
 	return self.t
 }
 
@@ -116,6 +120,10 @@ type FEELDateTime struct {
 }
 
 func (self FEELDateTime) Time() time.Time {
+	return self.t
+}
+
+func (self FEELDateTime) Date() time.Time {
 	return self.t
 }
 
@@ -343,21 +351,21 @@ func installDateTimeFunctions(prelude *Prelude) {
 		return &FEELDate{t: time.Now()}, nil
 	})
 
-	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v HasTime) (interface{}, error) {
-		return v.Time().Weekday(), nil
+	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v HasDate) (interface{}, error) {
+		return v.Date().Weekday(), nil
 	}, "date")
 
-	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v HasTime) (interface{}, error) {
-		return v.Time().YearDay(), nil
+	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
+		return v.Date().YearDay(), nil
 	}, "date")
 
-	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v HasTime) (interface{}, error) {
-		_, week := v.Time().ISOWeek()
+	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
+		_, week := v.Date().ISOWeek()
 		return week, nil
 	}, "date")
 
-	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v HasTime) (interface{}, error) {
-		return v.Time().Month(), nil
+	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
+		return v.Date().Month(), nil
 	}, "date")
 
 	prelude.BindNativeFunc("abs", func(intp *Interpreter, dur *FEELDuration) (interface{}, error) {
@@ -367,16 +375,16 @@ func installDateTimeFunctions(prelude *Prelude) {
 	}, "dur")
 
 	// refs https://docs.camunda.io/docs/components/modeler/feel/builtin-functions/feel-built-in-functions-temporal/#last-day-of-monthdate
-	prelude.BindNativeFunc("last day of month", func(intp *Interpreter, v HasTime) (interface{}, error) {
-		month := v.Time().Month()
-		year := v.Time().Year()
+	prelude.BindNativeFunc("last day of month", func(intp *Interpreter, v HasDate) (interface{}, error) {
+		month := v.Date().Month()
+		year := v.Date().Year()
 		if month == 12 {
 			year++
 			month = 1
 		} else {
 			month++
 		}
-		nextFirstDay := time.Date(year, month, 1, 0, 0, 0, 0, v.Time().Location())
+		nextFirstDay := time.Date(year, month, 1, 0, 0, 0, 0, v.Date().Location())
 		lastDay := nextFirstDay.Add(-24 * time.Hour) // 1 day before
 		return lastDay.Day(), nil
 	}, "date")
