@@ -228,7 +228,6 @@ func (self FEELDuration) String() string {
 	} else {
 		return fmt.Sprintf("%sP%sT%s%s%s", sNeg, sDay, sHour, sMinute, sSecond)
 	}
-
 }
 
 var yearmonthDurationPattern = regexp.MustCompile(`^(\-?)P((\d+)Y)?((\d+)M)?$`)
@@ -367,5 +366,18 @@ func installDateTimeFunctions(prelude *Prelude) {
 		return newDur, nil
 	}, "dur")
 
-	// TODO: last day of month()
+	// refs https://docs.camunda.io/docs/components/modeler/feel/builtin-functions/feel-built-in-functions-temporal/#last-day-of-monthdate
+	prelude.BindNativeFunc("last day of month", func(intp *Interpreter, v HasTime) (interface{}, error) {
+		month := v.Time().Month()
+		year := v.Time().Year()
+		if month == 12 {
+			year++
+			month = 1
+		} else {
+			month++
+		}
+		nextFirstDay := time.Date(year, month, 1, 0, 0, 0, 0, v.Time().Location())
+		lastDay := nextFirstDay.Add(-24 * time.Hour) // 1 day before
+		return lastDay.Day(), nil
+	}, "date")
 }

@@ -37,7 +37,11 @@ func NewNativeFunc(fn NativeFunDef) *NativeFun {
 }
 
 func (self *NativeFun) Call(intp *Interpreter, args []interface{}) (interface{}, error) {
-	return self.fn(intp, args)
+	v, err := self.fn(intp, args)
+	if err != nil {
+		return nil, err
+	}
+	return normalizeValue(v), nil
 }
 
 type Prelude struct {

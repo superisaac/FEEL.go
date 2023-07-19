@@ -56,6 +56,12 @@ func TestEvalPairs(t *testing.T) {
 
 		// keyword arguments
 		{`bind("sub", function(a, b) a - b); sub(a: 4, b: 2)`, ParseNumber(2)},
+
+		// temporal expressions
+		{`last day of month(@"2020-02-11")`, ParseNumber(29)},
+		{`last day of month(@"2021-01-07")`, ParseNumber(31)},
+		{`last day of month(@"2023-06-11")`, ParseNumber(30)},
+		{`last day of month(@"2023-07-11")`, ParseNumber(31)},
 	}
 
 	for _, p := range evalPairs {
@@ -100,4 +106,5 @@ func TestTemporalValue(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, 0, dur1.Year)
 	assert.Equal(t, 7, dur1.Month)
+
 }
