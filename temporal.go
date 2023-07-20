@@ -115,19 +115,19 @@ func ParseDate(timeStr string) (*FEELDate, error) {
 }
 
 // Date and Time
-type FEELDateTime struct {
+type FEELDatetime struct {
 	t time.Time
 }
 
-func (self FEELDateTime) Time() time.Time {
+func (self FEELDatetime) Time() time.Time {
 	return self.t
 }
 
-func (self FEELDateTime) Date() time.Time {
+func (self FEELDatetime) Date() time.Time {
 	return self.t
 }
 
-func (self FEELDateTime) GetAttr(name string) (interface{}, bool) {
+func (self FEELDatetime) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "year":
 		return self.t.Year(), true
@@ -151,12 +151,21 @@ func (self FEELDateTime) GetAttr(name string) (interface{}, bool) {
 	return nil, false
 }
 
-func (self FEELDateTime) MarshalJSON() ([]byte, error) {
+func (self FEELDatetime) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.String())
 }
 
-func (self FEELDateTime) String() string {
+func (self FEELDatetime) String() string {
 	return self.t.Format("2006-01-02T15:04:05@MST")
+}
+
+func (self *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
+	return &FEELDatetime{t: self.t.Add(dur.Duration())}
+}
+
+func (self *FEELDatetime) Sub(v HasTime) *FEELDuration {
+	delta := self.t.Sub(v.Time())
+	return NewFEELDuration(delta)
 }
 
 var dateTimePatterns = []string{
@@ -165,10 +174,10 @@ var dateTimePatterns = []string{
 	"2006-01-02T15:04:05@MST",
 }
 
-func ParseDateTime(temporalStr string) (*FEELDateTime, error) {
+func ParseDatetime(temporalStr string) (*FEELDatetime, error) {
 	for _, pat := range dateTimePatterns {
 		if t, err := time.Parse(pat, temporalStr); err == nil {
-			return &FEELDateTime{t: t}, nil
+			return &FEELDatetime{t: t}, nil
 		}
 	}
 	return nil, ErrParseTemporal
@@ -182,6 +191,23 @@ type FEELDuration struct {
 	Hour   int
 	Minute int
 	Second int
+}
+
+func NewFEELDuration(dur time.Duration) *FEELDuration {
+	d := &FEELDuration{}
+	ndur := int(dur)
+	nhours := ndur / int(time.Hour)
+	remain := ndur - nhours*int(time.Hour)
+	nmins := remain / int(time.Minute)
+
+	remain -= nmins * int(time.Minute)
+	nsecs := remain / int(time.Second)
+
+	d.Day = nhours / 24
+	d.Hour = nhours - d.Day*24
+	d.Minute = nmins
+	d.Second = nsecs
+	return d
 }
 
 func (self FEELDuration) GetAttr(name string) (interface{}, bool) {
@@ -204,6 +230,13 @@ func (self FEELDuration) GetAttr(name string) (interface{}, bool) {
 
 func (self FEELDuration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.String())
+}
+
+func (self FEELDuration) Duration() time.Duration {
+	// self.Year and self.Month
+	return (time.Duration(self.Day*24+self.Hour)*time.Hour +
+		time.Duration(self.Minute)*time.Minute +
+		time.Duration(self.Second)*time.Second)
 }
 
 func (self FEELDuration) String() string {
@@ -307,7 +340,7 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 }
 
 func ParseTemporalValue(temporalStr string) (interface{}, error) {
-	if v, err := ParseDateTime(temporalStr); err == nil {
+	if v, err := ParseDatetime(temporalStr); err == nil {
 		return v, nil
 	}
 
@@ -320,11 +353,10 @@ func ParseTemporalValue(temporalStr string) (interface{}, error) {
 	}
 
 	return ParseDuration(temporalStr)
-
 }
 
 // builtin functions
-func installDateTimeFunctions(prelude *Prelude) {
+func installDatetimeFunctions(prelude *Prelude) {
 	// conversions
 	prelude.BindNativeFunc("date", func(intp *Interpreter, frm string) (interface{}, error) {
 		return ParseDate(frm)
@@ -335,7 +367,7 @@ func installDateTimeFunctions(prelude *Prelude) {
 	}, "from")
 
 	prelude.BindNativeFunc("date and time", func(intp *Interpreter, frm string) (interface{}, error) {
-		return ParseDateTime(frm)
+		return ParseDatetime(frm)
 	}, "from")
 
 	prelude.BindNativeFunc("duration", func(intp *Interpreter, frm string) (interface{}, error) {
@@ -344,7 +376,7 @@ func installDateTimeFunctions(prelude *Prelude) {
 
 	// temporal functions
 	prelude.BindNativeFunc("now", func(intp *Interpreter) (interface{}, error) {
-		return &FEELDateTime{t: time.Now()}, nil
+		return &FEELDatetime{t: time.Now()}, nil
 	})
 
 	prelude.BindNativeFunc("today", func(intp *Interpreter) (interface{}, error) {

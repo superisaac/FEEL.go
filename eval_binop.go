@@ -158,7 +158,7 @@ func (self Binop) compareValues(intp *Interpreter) (int, error) {
 	return self.compareInterfaces(leftVal, rightVal)
 }
 
-func (self Binop) stringNumberOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (interface{}, error) {
+func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (interface{}, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -177,12 +177,22 @@ func (self Binop) stringNumberOp(intp *Interpreter, es evalStrings, en evalNumbe
 		if rightNumber, ok := rightVal.(*Number); ok {
 			return en(v, rightNumber), nil
 		}
+	case *FEELDatetime:
+		if op == "+" {
+			if rightDur, ok := rightVal.(*FEELDuration); ok {
+				return v.Add(rightDur), nil
+			}
+		} else if op == "-" {
+			if rightTime, ok := rightVal.(HasTime); ok {
+				return v.Sub(rightTime), nil
+			}
+		}
 	}
 	return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad type in op, %T %s %T", leftVal, op, rightVal))
 }
 
 func (self Binop) addOp(intp *Interpreter) (interface{}, error) {
-	return self.stringNumberOp(
+	return self.typedOp(
 		intp,
 		func(a, b string) interface{} { return a + b },
 		func(a, b *Number) interface{} { return a.Add(b) },

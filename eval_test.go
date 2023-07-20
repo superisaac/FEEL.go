@@ -92,7 +92,7 @@ func TestTemporalValue(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, v1, ParseNumber(39))
 
-	dt, err := ParseDateTime(`2023-06-07T15:04:05`)
+	dt, err := ParseDatetime(`2023-06-07T15:04:05`)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, dt.t.Hour(), 15)
 	assert.DeepEqual(t, dt.t.Second(), 5)
