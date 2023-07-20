@@ -2,8 +2,10 @@ package feel
 
 import (
 	"fmt"
-	"gotest.tools/assert"
 	"testing"
+	"time"
+
+	"gotest.tools/assert"
 )
 
 type evalPair struct {
@@ -107,4 +109,15 @@ func TestTemporalValue(t *testing.T) {
 	assert.Equal(t, 0, dur1.Year)
 	assert.Equal(t, 7, dur1.Month)
 
+	dur2, err := ParseDuration("PT20H")
+	assert.NilError(t, err)
+	assert.Equal(t, 20, dur2.Hour)
+	assert.Equal(t, 0, dur2.Second)
+
+	td, err := time.ParseDuration("3h37m20s")
+	assert.NilError(t, err)
+	dur3 := NewFEELDuration(td)
+	assert.Equal(t, 3, dur3.Hour)
+	assert.Equal(t, 37, dur3.Minute)
+	assert.Equal(t, 20, dur3.Second)
 }
