@@ -234,9 +234,13 @@ func (self FEELDuration) MarshalJSON() ([]byte, error) {
 
 func (self FEELDuration) Duration() time.Duration {
 	// self.Year and self.Month
-	return (time.Duration(self.Day*24+self.Hour)*time.Hour +
+	dv := (time.Duration(self.Day*24+self.Hour)*time.Hour +
 		time.Duration(self.Minute)*time.Minute +
 		time.Duration(self.Second)*time.Second)
+	if self.Neg {
+		dv = -dv
+	}
+	return dv
 }
 
 func (self FEELDuration) String() string {
@@ -272,7 +276,7 @@ func (self FEELDuration) String() string {
 }
 
 var yearmonthDurationPattern = regexp.MustCompile(`^(\-?)P((\d+)Y)?((\d+)M)?$`)
-var timeDurationPatteren = regexp.MustCompile(`^(\-?)P((\d+)D)?T((\d+)H)?((\d+)M)?((\d+)S)?$`)
+var timeDurationPattern = regexp.MustCompile(`^(\-?)P((\d+)D)?T((\d+)H)?((\d+)M)?((\d+)S)?$`)
 
 func ParseDuration(temporalStr string) (*FEELDuration, error) {
 	// parse year month duration
@@ -300,7 +304,7 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 	}
 
 	// parse day time duration
-	if submatches := timeDurationPatteren.FindStringSubmatch(temporalStr); submatches != nil {
+	if submatches := timeDurationPattern.FindStringSubmatch(temporalStr); submatches != nil {
 		dur := &FEELDuration{}
 		if submatches[1] != "" {
 			dur.Neg = true
@@ -317,6 +321,9 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if err != nil {
 				return nil, err
 			}
+			if v > 24 {
+				return nil, errors.New("hours cannot exceed 24")
+			}
 			dur.Hour = int(v)
 		}
 		if submatches[6] != "" {
@@ -324,12 +331,18 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if err != nil {
 				return nil, err
 			}
+			if v > 60 {
+				return nil, errors.New("minutes cannot exceed 60")
+			}
 			dur.Minute = int(v)
 		}
 		if submatches[8] != "" {
 			v, err := strconv.ParseInt(submatches[9], 10, 64)
 			if err != nil {
 				return nil, err
+			}
+			if v > 60 {
+				return nil, errors.New("seconds cannot exceed 60")
 			}
 			dur.Second = int(v)
 		}
