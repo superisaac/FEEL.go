@@ -127,6 +127,20 @@ func (self FEELDatetime) Date() time.Time {
 	return self.t
 }
 
+func (self FEELDatetime) Equal(other FEELDatetime) bool {
+	return self.t.Equal(other.t)
+}
+
+func (self FEELDatetime) Compare(other FEELDatetime) int {
+	if self.t.Equal(other.t) {
+		return 0
+	} else if self.t.Before(other.t) {
+		return -1
+	} else {
+		return 1
+	}
+}
+
 func (self FEELDatetime) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "year":
@@ -243,6 +257,12 @@ func (self FEELDuration) Duration() time.Duration {
 	return dv
 }
 
+func (self *FEELDuration) Negative() *FEELDuration {
+	neg := *self
+	neg.Neg = !self.Neg
+	return &neg
+}
+
 func (self FEELDuration) String() string {
 	sYear, sMonth, sDay, sHour, sMinute, sSecond := "", "", "", "", "", ""
 	sNeg := ""
@@ -260,13 +280,13 @@ func (self FEELDuration) String() string {
 	}
 
 	if self.Hours != 0 {
-		sDay = fmt.Sprintf("%dH", self.Hours)
+		sHour = fmt.Sprintf("%dH", self.Hours)
 	}
 	if self.Minutes != 0 {
-		sDay = fmt.Sprintf("%dM", self.Minutes)
+		sMinute = fmt.Sprintf("%dM", self.Minutes)
 	}
 	if self.Seconds != 0 {
-		sDay = fmt.Sprintf("%dS", self.Seconds)
+		sSecond = fmt.Sprintf("%dS", self.Seconds)
 	}
 	if sYear != "" || sMonth != "" {
 		return fmt.Sprintf("%sP%s%s", sNeg, sYear, sMonth)
@@ -373,51 +393,51 @@ func installDatetimeFunctions(prelude *Prelude) {
 	// conversions
 	prelude.BindNativeFunc("date", func(intp *Interpreter, frm string) (interface{}, error) {
 		return ParseDate(frm)
-	}, "from")
+	}, []string{"from"})
 
 	prelude.BindNativeFunc("time", func(intp *Interpreter, frm string) (interface{}, error) {
 		return ParseTime(frm)
-	}, "from")
+	}, []string{"from"})
 
 	prelude.BindNativeFunc("date and time", func(intp *Interpreter, frm string) (interface{}, error) {
 		return ParseDatetime(frm)
-	}, "from")
+	}, []string{"from"})
 
 	prelude.BindNativeFunc("duration", func(intp *Interpreter, frm string) (interface{}, error) {
 		return ParseDuration(frm)
-	}, "from")
+	}, []string{"from"})
 
 	// temporal functions
 	prelude.BindNativeFunc("now", func(intp *Interpreter) (interface{}, error) {
 		return &FEELDatetime{t: time.Now()}, nil
-	})
+	}, nil)
 
 	prelude.BindNativeFunc("today", func(intp *Interpreter) (interface{}, error) {
 		return &FEELDate{t: time.Now()}, nil
-	})
+	}, nil)
 
 	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v HasDate) (interface{}, error) {
 		return v.Date().Weekday(), nil
-	}, "date")
+	}, []string{"date"})
 
 	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
 		return v.Date().YearDay(), nil
-	}, "date")
+	}, []string{"date"})
 
 	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
 		_, week := v.Date().ISOWeek()
 		return week, nil
-	}, "date")
+	}, []string{"date"})
 
 	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
 		return v.Date().Month(), nil
-	}, "date")
+	}, []string{"date"})
 
 	prelude.BindNativeFunc("abs", func(intp *Interpreter, dur *FEELDuration) (interface{}, error) {
 		newDur := *dur
 		newDur.Neg = false
 		return newDur, nil
-	}, "dur")
+	}, []string{"dur"})
 
 	// refs https://docs.camunda.io/docs/components/modeler/feel/builtin-functions/feel-built-in-functions-temporal/#last-day-of-monthdate
 	prelude.BindNativeFunc("last day of month", func(intp *Interpreter, v HasDate) (interface{}, error) {
@@ -432,5 +452,5 @@ func installDatetimeFunctions(prelude *Prelude) {
 		nextFirstDay := time.Date(year, month, 1, 0, 0, 0, 0, v.Date().Location())
 		lastDay := nextFirstDay.Add(-24 * time.Hour) // 1 day before
 		return lastDay.Day(), nil
-	}, "date")
+	}, []string{"date"})
 }

@@ -89,6 +89,16 @@ func (self Binop) compareInterfaces(leftVal, rightVal interface{}) (int, error) 
 				return 1, nil
 			}
 		}
+	case HasTime:
+		if rightHasTime, ok := rightVal.(HasTime); ok {
+			if v.Time().Equal(rightHasTime.Time()) {
+				return 0, nil
+			} else if v.Time().Before(rightHasTime.Time()) {
+				return -1, nil
+			} else {
+				return 1, nil
+			}
+		}
 	case []interface{}:
 		if rightArr, ok := rightVal.([]interface{}); ok {
 			return self.compareArrays(v, rightArr)
@@ -170,12 +180,16 @@ func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op 
 
 	switch v := leftVal.(type) {
 	case string:
-		if rightString, ok := rightVal.(string); ok {
-			return es(v, rightString), nil
+		if es != nil {
+			if rightString, ok := rightVal.(string); ok {
+				return es(v, rightString), nil
+			}
 		}
 	case *Number:
-		if rightNumber, ok := rightVal.(*Number); ok {
-			return en(v, rightNumber), nil
+		if en != nil {
+			if rightNumber, ok := rightVal.(*Number); ok {
+				return en(v, rightNumber), nil
+			}
 		}
 	case *FEELDatetime:
 		if op == "+" {
@@ -183,7 +197,9 @@ func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op 
 				return v.Add(rightDur), nil
 			}
 		} else if op == "-" {
-			if rightTime, ok := rightVal.(HasTime); ok {
+			if rightDur, ok := rightVal.(*FEELDuration); ok {
+				return v.Add(rightDur.Negative()), nil
+			} else if rightTime, ok := rightVal.(HasTime); ok {
 				return v.Sub(rightTime), nil
 			}
 		}
@@ -201,8 +217,9 @@ func (self Binop) addOp(intp *Interpreter) (interface{}, error) {
 }
 
 func (self Binop) subOp(intp *Interpreter) (interface{}, error) {
-	return self.numberOp(
+	return self.typedOp(
 		intp,
+		nil,
 		func(a, b *Number) interface{} { return a.Sub(b) },
 		"-")
 }

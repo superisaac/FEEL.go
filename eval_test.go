@@ -15,6 +15,7 @@ type evalPair struct {
 
 func TestEvalPairs(t *testing.T) {
 	//assert0 := assert.New(t)
+	time1, _ := ParseDatetime("2023-07-21T11:54:32@CST")
 	evalPairs := []evalPair{
 		// empty input outputs nil
 		{"", nil},
@@ -64,6 +65,8 @@ func TestEvalPairs(t *testing.T) {
 		{`last day of month(@"2021-01-07")`, ParseNumber(31)},
 		{`last day of month(@"2023-06-11")`, ParseNumber(30)},
 		{`last day of month(@"2023-07-11")`, ParseNumber(31)},
+
+		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, time1},
 	}
 
 	for _, p := range evalPairs {

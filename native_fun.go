@@ -60,8 +60,8 @@ func GetPrelude() *Prelude {
 }
 
 func (self *Prelude) Load() {
-	self.BindNativeFunc("not", nativeNot, "v")
-	self.BindNativeFunc("bind", nativeBind, "varname", "value")
+	self.BindNativeFunc("not", nativeNot, []string{"v"})
+	self.BindNativeFunc("bind", nativeBind, []string{"varname", "value"})
 	installDatetimeFunctions(self)
 }
 
@@ -69,7 +69,7 @@ func (self *Prelude) Bind(name string, value interface{}) {
 	self.vars[name] = normalizeValue(value)
 }
 
-func (self *Prelude) BindNativeFunc(name string, fn interface{}, argNames ...string) {
+func (self *Prelude) BindNativeFunc(name string, fn interface{}, argNames []string) {
 	if isdup, argName := hasDupName(argNames); isdup {
 		panic(fmt.Sprintf("nativee function %s has duplicate arg name %s", name, argName))
 	}
