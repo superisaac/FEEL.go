@@ -184,13 +184,13 @@ func ParseDatetime(temporalStr string) (*FEELDatetime, error) {
 }
 
 type FEELDuration struct {
-	Neg    bool
-	Year   int
-	Month  int
-	Day    int
-	Hour   int
-	Minute int
-	Second int
+	Neg     bool
+	Years   int
+	Months  int
+	Days    int
+	Hours   int
+	Minutes int
+	Seconds int
 }
 
 func NewFEELDuration(dur time.Duration) *FEELDuration {
@@ -203,27 +203,27 @@ func NewFEELDuration(dur time.Duration) *FEELDuration {
 	remain -= nmins * int(time.Minute)
 	nsecs := remain / int(time.Second)
 
-	d.Day = nhours / 24
-	d.Hour = nhours - d.Day*24
-	d.Minute = nmins
-	d.Second = nsecs
+	d.Days = nhours / 24
+	d.Hours = nhours - d.Days*24
+	d.Minutes = nmins
+	d.Seconds = nsecs
 	return d
 }
 
 func (self FEELDuration) GetAttr(name string) (interface{}, bool) {
 	switch name {
-	case "year":
-		return self.Year, true
-	case "month":
-		return self.Month, true
-	case "day":
-		return self.Day, true
-	case "hour":
-		return self.Hour, true
-	case "minute":
-		return self.Minute, true
-	case "second":
-		return self.Second, true
+	case "years":
+		return self.Years, true
+	case "months":
+		return self.Months, true
+	case "days":
+		return self.Days, true
+	case "hours":
+		return self.Hours, true
+	case "minutes":
+		return self.Minutes, true
+	case "seconds":
+		return self.Seconds, true
 	}
 	return nil, false
 }
@@ -234,9 +234,9 @@ func (self FEELDuration) MarshalJSON() ([]byte, error) {
 
 func (self FEELDuration) Duration() time.Duration {
 	// self.Year and self.Month
-	dv := (time.Duration(self.Day*24+self.Hour)*time.Hour +
-		time.Duration(self.Minute)*time.Minute +
-		time.Duration(self.Second)*time.Second)
+	dv := (time.Duration(self.Days*24+self.Hours)*time.Hour +
+		time.Duration(self.Minutes)*time.Minute +
+		time.Duration(self.Seconds)*time.Second)
 	if self.Neg {
 		dv = -dv
 	}
@@ -249,24 +249,24 @@ func (self FEELDuration) String() string {
 	if self.Neg {
 		sNeg = "-"
 	}
-	if self.Year != 0 {
-		sYear = fmt.Sprintf("%dY", self.Year)
+	if self.Years != 0 {
+		sYear = fmt.Sprintf("%dY", self.Years)
 	}
-	if self.Month != 0 {
-		sMonth = fmt.Sprintf("%dM", self.Month)
+	if self.Months != 0 {
+		sMonth = fmt.Sprintf("%dM", self.Months)
 	}
-	if self.Day != 0 {
-		sDay = fmt.Sprintf("%dD", self.Day)
+	if self.Days != 0 {
+		sDay = fmt.Sprintf("%dD", self.Days)
 	}
 
-	if self.Hour != 0 {
-		sDay = fmt.Sprintf("%dH", self.Hour)
+	if self.Hours != 0 {
+		sDay = fmt.Sprintf("%dH", self.Hours)
 	}
-	if self.Minute != 0 {
-		sDay = fmt.Sprintf("%dM", self.Minute)
+	if self.Minutes != 0 {
+		sDay = fmt.Sprintf("%dM", self.Minutes)
 	}
-	if self.Second != 0 {
-		sDay = fmt.Sprintf("%dS", self.Second)
+	if self.Seconds != 0 {
+		sDay = fmt.Sprintf("%dS", self.Seconds)
 	}
 	if sYear != "" || sMonth != "" {
 		return fmt.Sprintf("%sP%s%s", sNeg, sYear, sMonth)
@@ -291,14 +291,14 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if err != nil {
 				return nil, err
 			}
-			dur.Year = int(y)
+			dur.Years = int(y)
 		}
 		if submatches[4] != "" {
 			m, err := strconv.ParseInt(submatches[5], 10, 64)
 			if err != nil {
 				return nil, err
 			}
-			dur.Month = int(m)
+			dur.Months = int(m)
 		}
 		return dur, nil
 	}
@@ -314,7 +314,7 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if err != nil {
 				return nil, err
 			}
-			dur.Day = int(v)
+			dur.Days = int(v)
 		}
 		if submatches[4] != "" {
 			v, err := strconv.ParseInt(submatches[5], 10, 64)
@@ -324,7 +324,7 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if v > 24 {
 				return nil, errors.New("hours cannot exceed 24")
 			}
-			dur.Hour = int(v)
+			dur.Hours = int(v)
 		}
 		if submatches[6] != "" {
 			v, err := strconv.ParseInt(submatches[7], 10, 64)
@@ -334,7 +334,7 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if v > 60 {
 				return nil, errors.New("minutes cannot exceed 60")
 			}
-			dur.Minute = int(v)
+			dur.Minutes = int(v)
 		}
 		if submatches[8] != "" {
 			v, err := strconv.ParseInt(submatches[9], 10, 64)
@@ -344,7 +344,7 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			if v > 60 {
 				return nil, errors.New("seconds cannot exceed 60")
 			}
-			dur.Second = int(v)
+			dur.Seconds = int(v)
 		}
 		return dur, nil
 	}

@@ -94,6 +94,11 @@ func TestTemporalValue(t *testing.T) {
 	assert.NilError(t, err)
 	assert.DeepEqual(t, v1, ParseNumber(39))
 
+	input2 := `@"P1DT3H25M60S".minutes`
+	v2, err := EvalString(input2)
+	assert.NilError(t, err)
+	assert.DeepEqual(t, v2, ParseNumber(25))
+
 	dt, err := ParseDatetime(`2023-06-07T15:04:05`)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, dt.t.Hour(), 15)
@@ -101,23 +106,23 @@ func TestTemporalValue(t *testing.T) {
 
 	dur, err := ParseDuration("P12Y2M")
 	assert.NilError(t, err)
-	assert.Equal(t, 12, dur.Year)
-	assert.Equal(t, 2, dur.Month)
+	assert.Equal(t, 12, dur.Years)
+	assert.Equal(t, 2, dur.Months)
 
 	dur1, err := ParseDuration("P7M")
 	assert.NilError(t, err)
-	assert.Equal(t, 0, dur1.Year)
-	assert.Equal(t, 7, dur1.Month)
+	assert.Equal(t, 0, dur1.Years)
+	assert.Equal(t, 7, dur1.Months)
 
 	dur2, err := ParseDuration("PT20H")
 	assert.NilError(t, err)
-	assert.Equal(t, 20, dur2.Hour)
-	assert.Equal(t, 0, dur2.Second)
+	assert.Equal(t, 20, dur2.Hours)
+	assert.Equal(t, 0, dur2.Seconds)
 
 	td, err := time.ParseDuration("3h37m20s")
 	assert.NilError(t, err)
 	dur3 := NewFEELDuration(td)
-	assert.Equal(t, 3, dur3.Hour)
-	assert.Equal(t, 37, dur3.Minute)
-	assert.Equal(t, 20, dur3.Second)
+	assert.Equal(t, 3, dur3.Hours)
+	assert.Equal(t, 37, dur3.Minutes)
+	assert.Equal(t, 20, dur3.Seconds)
 }
