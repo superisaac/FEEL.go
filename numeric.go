@@ -3,12 +3,16 @@ package feel
 // spec on FEEL's number is https://kiegroup.github.io/dmn-feel-handbook/#number
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"math/big"
 )
 
 const (
 	Prec = 34 * 8
+)
+
+var (
+	ErrParseNumber = errors.New("fail to parse number")
 )
 
 type Number struct {
@@ -33,19 +37,29 @@ func NewNumberFromFloat(input float64) *Number {
 	return &Number{v: v}
 }
 
-func ParseNumber(v interface{}) *Number {
+func ParseNumberWithErr(v interface{}) (*Number, error) {
 	switch vv := v.(type) {
 	case int:
-		return NewNumberFromInt64(int64(vv))
+		return NewNumberFromInt64(int64(vv)), nil
 	case int64:
-		return NewNumberFromInt64(vv)
+		return NewNumberFromInt64(vv), nil
 	case float64:
-		return NewNumberFromFloat(vv)
+		return NewNumberFromFloat(vv), nil
 	case string:
-		return NewNumber(vv)
+		return NewNumber(vv), nil
+	case *Number:
+		return vv, nil
 	default:
-		panic(fmt.Sprintf("bad number %#v", v))
+		return nil, ErrParseNumber
 	}
+}
+
+func ParseNumber(v interface{}) *Number {
+	n, err := ParseNumberWithErr(v)
+	if err != nil {
+		panic(err)
+	}
+	return n
 }
 
 func (self Number) Int64() int64 {

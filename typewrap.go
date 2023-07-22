@@ -32,7 +32,8 @@ func interfaceToValue(a interface{}, outputType reflect.Type) (reflect.Value, er
 
 func valueToInterface(tp reflect.Type, val reflect.Value) (interface{}, error) {
 	var output interface{}
-	if typeIsStruct(tp) {
+	//if typeIsStruct(tp) {
+	if false {
 		output = make(map[string]interface{})
 	} else {
 		output = reflect.Zero(tp).Interface()
@@ -60,26 +61,24 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		panic("tfunc is not func type")
 	}
 
+	firstArgNum := 0
 	numIn := funcType.NumIn()
 
-	if numIn != len(argNames)+1 {
+	// if false {
+	// 	firstArgNum = 1
+	// 	// check inputs and 1st argument
+	// 	if numIn < firstArgNum {
+	// 		panic(errors.New("func must have 1 more arguments"))
+	// 	}
+	// 	firstArgType := funcType.In(0)
+	// 	// TODO: using more methods to check type equal
+	// 	if !(firstArgType.Kind() == reflect.Ptr && firstArgType.Elem().Name() == "Interpreter") {
+	// 		panic(fmt.Sprintf("the first arg must be %s, it's %s instead", firstArgSpec.String(), firstArgType.Elem().Name()))
+	// 	}
+	// }
+
+	if numIn != len(argNames)+firstArgNum {
 		panic(fmt.Sprintf("arg number msmatch, %d expected, but %d given", numIn-1, len(argNames)))
-	}
-
-	firstArgSpec := &Interpreter{}
-
-	firstArgNum := 0
-	if true {
-		firstArgNum = 1
-		// check inputs and 1st argument
-		if numIn < firstArgNum {
-			panic(errors.New("func must have 1 more arguments"))
-		}
-		firstArgType := funcType.In(0)
-		// TODO: using more methods to check type equal
-		if !(firstArgType.Kind() == reflect.Ptr && firstArgType.Elem().Name() == "Interpreter") {
-			panic(fmt.Sprintf("the first arg must be %s, it's %s instead", firstArgSpec.String(), firstArgType.Elem().Name()))
-		}
 	}
 
 	// check outputs
@@ -94,7 +93,7 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		panic("second output does not implement error")
 	}
 
-	handler := func(intp *Interpreter, args []interface{}) (interface{}, error) {
+	handler := func(args []interface{}) (interface{}, error) {
 		// check inputs
 		if numIn > len(args)+firstArgNum {
 			return nil, errors.New("no enough params size")
@@ -102,7 +101,7 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 
 		// params -> []reflect.Value
 		fnArgs := []reflect.Value{}
-		fnArgs = append(fnArgs, reflect.ValueOf(intp))
+		//fnArgs = append(fnArgs, reflect.ValueOf(intp))
 		j := 0
 		for i := firstArgNum; i < numIn; i++ {
 			argType := funcType.In(i)

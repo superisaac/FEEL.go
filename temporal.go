@@ -391,56 +391,56 @@ func ParseTemporalValue(temporalStr string) (interface{}, error) {
 // builtin functions
 func installDatetimeFunctions(prelude *Prelude) {
 	// conversions
-	prelude.BindNativeFunc("date", func(intp *Interpreter, frm string) (interface{}, error) {
+	prelude.BindNativeFunc("date", func(frm string) (interface{}, error) {
 		return ParseDate(frm)
 	}, []string{"from"})
 
-	prelude.BindNativeFunc("time", func(intp *Interpreter, frm string) (interface{}, error) {
+	prelude.BindNativeFunc("time", func(frm string) (interface{}, error) {
 		return ParseTime(frm)
 	}, []string{"from"})
 
-	prelude.BindNativeFunc("date and time", func(intp *Interpreter, frm string) (interface{}, error) {
+	prelude.BindNativeFunc("date and time", func(frm string) (interface{}, error) {
 		return ParseDatetime(frm)
 	}, []string{"from"})
 
-	prelude.BindNativeFunc("duration", func(intp *Interpreter, frm string) (interface{}, error) {
+	prelude.BindNativeFunc("duration", func(frm string) (interface{}, error) {
 		return ParseDuration(frm)
 	}, []string{"from"})
 
 	// temporal functions
-	prelude.BindNativeFunc("now", func(intp *Interpreter) (interface{}, error) {
+	prelude.BindNativeFunc("now", func() (interface{}, error) {
 		return &FEELDatetime{t: time.Now()}, nil
 	}, nil)
 
-	prelude.BindNativeFunc("today", func(intp *Interpreter) (interface{}, error) {
+	prelude.BindNativeFunc("today", func() (interface{}, error) {
 		return &FEELDate{t: time.Now()}, nil
 	}, nil)
 
-	prelude.BindNativeFunc("day of week", func(intp *Interpreter, v HasDate) (interface{}, error) {
+	prelude.BindNativeFunc("day of week", func(v HasDate) (interface{}, error) {
 		return v.Date().Weekday(), nil
 	}, []string{"date"})
 
-	prelude.BindNativeFunc("day of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
+	prelude.BindNativeFunc("day of year", func(v HasDate) (interface{}, error) {
 		return v.Date().YearDay(), nil
 	}, []string{"date"})
 
-	prelude.BindNativeFunc("week of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
+	prelude.BindNativeFunc("week of year", func(v HasDate) (interface{}, error) {
 		_, week := v.Date().ISOWeek()
 		return week, nil
 	}, []string{"date"})
 
-	prelude.BindNativeFunc("month of year", func(intp *Interpreter, v HasDate) (interface{}, error) {
+	prelude.BindNativeFunc("month of year", func(v HasDate) (interface{}, error) {
 		return v.Date().Month(), nil
 	}, []string{"date"})
 
-	prelude.BindNativeFunc("abs", func(intp *Interpreter, dur *FEELDuration) (interface{}, error) {
+	prelude.BindNativeFunc("abs", func(dur *FEELDuration) (interface{}, error) {
 		newDur := *dur
 		newDur.Neg = false
 		return newDur, nil
 	}, []string{"dur"})
 
 	// refs https://docs.camunda.io/docs/components/modeler/feel/builtin-functions/feel-built-in-functions-temporal/#last-day-of-monthdate
-	prelude.BindNativeFunc("last day of month", func(intp *Interpreter, v HasDate) (interface{}, error) {
+	prelude.BindNativeFunc("last day of month", func(v HasDate) (interface{}, error) {
 		month := v.Date().Month()
 		year := v.Date().Year()
 		if month == 12 {

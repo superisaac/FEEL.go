@@ -67,6 +67,10 @@ func TestEvalPairs(t *testing.T) {
 		{`last day of month(@"2023-07-11")`, ParseNumber(31)},
 
 		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, time1},
+
+		// builtin functions
+		{`is defined(x)`, false},
+		{`bind("x", 666); is defined(x)`, true},
 	}
 
 	for _, p := range evalPairs {

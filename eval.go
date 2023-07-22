@@ -367,11 +367,13 @@ func (self FunCall) Eval(intp *Interpreter) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch funRef := v.(type) {
+	switch r := v.(type) {
 	case *FunDef:
-		return self.EvalFunDef(intp, funRef)
+		return self.EvalFunDef(intp, r)
 	case *NativeFun:
-		return self.EvalNativeFun(intp, funRef)
+		return self.EvalNativeFun(intp, r)
+	case *Macro:
+		return self.EvalMacro(intp, r)
 	default:
 		return nil, NewEvalError(-1003, "call on a non function")
 	}
@@ -418,6 +420,17 @@ func (self FunCall) evalArgsToMap(intp *Interpreter) (map[string]interface{}, er
 		kwArgMap[argNode.argName] = a
 	}
 	return kwArgMap, nil
+}
+
+func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (interface{}, error) {
+	if len(macro.argNames) != len(self.Args) {
+		return nil, NewEvalError(-1005, "number of args of macro mismatch")
+	}
+	var mArgs []AST
+	for _, arg := range self.Args {
+		mArgs = append(mArgs, arg.arg)
+	}
+	return macro.fn(intp, mArgs)
 }
 
 func (self FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (interface{}, error) {
