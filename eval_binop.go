@@ -65,7 +65,7 @@ func (self Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (interf
 	return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad type in op, %T %s %T", leftVal, op, rightVal))
 }
 
-func (self Binop) compareInterfaces(leftVal, rightVal interface{}) (int, error) {
+func compareInterfaces(leftVal, rightVal interface{}) (int, error) {
 	switch v := leftVal.(type) {
 	case string:
 		if rightString, ok := rightVal.(string); ok {
@@ -101,17 +101,17 @@ func (self Binop) compareInterfaces(leftVal, rightVal interface{}) (int, error) 
 		}
 	case []interface{}:
 		if rightArr, ok := rightVal.([]interface{}); ok {
-			return self.compareArrays(v, rightArr)
+			return compareArrays(v, rightArr)
 		}
 	case map[string]interface{}:
 		if rightMap, ok := rightVal.(map[string]interface{}); ok {
-			return self.compareMaps(v, rightMap)
+			return compareMaps(v, rightMap)
 		}
 	}
 	return 0, NewEvalError(-3106, "invalid types", fmt.Sprintf("bad type in comparation, %T vs. %T", leftVal, rightVal))
 }
 
-func (self Binop) compareArrays(a, b []interface{}) (int, error) {
+func compareArrays(a, b []interface{}) (int, error) {
 	minSize := len(a)
 	if minSize > len(b) {
 		minSize = len(b)
@@ -119,7 +119,7 @@ func (self Binop) compareArrays(a, b []interface{}) (int, error) {
 	for i := 0; i < minSize; i++ {
 		leftVal := a[i]
 		rightVal := b[i]
-		r, err := self.compareInterfaces(leftVal, rightVal)
+		r, err := compareInterfaces(leftVal, rightVal)
 		if err != nil {
 			return 0, err
 		}
@@ -134,7 +134,7 @@ func (self Binop) compareArrays(a, b []interface{}) (int, error) {
 	}
 }
 
-func (self Binop) compareMaps(a, b map[string]interface{}) (int, error) {
+func compareMaps(a, b map[string]interface{}) (int, error) {
 	if len(a) > len(b) {
 		return 1, nil
 	} else if len(a) < len(b) {
@@ -142,7 +142,7 @@ func (self Binop) compareMaps(a, b map[string]interface{}) (int, error) {
 	}
 	for k, leftVal := range a {
 		if rightVal, ok := b[k]; ok {
-			r, err := self.compareInterfaces(leftVal, rightVal)
+			r, err := compareInterfaces(leftVal, rightVal)
 			if err != nil {
 				return 0, err
 			}
@@ -165,7 +165,7 @@ func (self Binop) compareValues(intp *Interpreter) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return self.compareInterfaces(leftVal, rightVal)
+	return compareInterfaces(leftVal, rightVal)
 }
 
 func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (interface{}, error) {

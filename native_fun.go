@@ -89,6 +89,9 @@ func (self *Prelude) Load() {
 }
 
 func (self *Prelude) Bind(name string, value interface{}) {
+	if _, ok := self.vars[name]; ok {
+		panic(fmt.Sprintf("bind(), name '%s' already bound", name))
+	}
 	self.vars[name] = normalizeValue(value)
 }
 

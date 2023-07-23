@@ -99,6 +99,14 @@ func (self *Number) IntDiv(other *Number) *Number {
 	return &Number{v: newf}
 }
 
+func (self *Number) FloatDiv(other *Number) *Number {
+	a, _ := self.v.Float64()
+	b, _ := other.v.Float64()
+	newf := new(big.Float)
+	newf.SetPrec(Prec).SetFloat64(a / b)
+	return &Number{v: newf}
+}
+
 func (self *Number) IntMod(other *Number) *Number {
 	newv := new(big.Int)
 	a, _ := self.v.Int(nil)
