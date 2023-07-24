@@ -26,7 +26,7 @@ func (self ArgSizeError) Error() string {
 }
 
 // native function
-type NativeFunDef func(args []interface{}) (interface{}, error)
+type NativeFunDef func(args map[string]interface{}) (interface{}, error)
 
 type NativeFun struct {
 	fn       NativeFunDef
@@ -37,7 +37,7 @@ func NewNativeFunc(fn NativeFunDef) *NativeFun {
 	return &NativeFun{fn: fn}
 }
 
-func (self *NativeFun) Call(intp *Interpreter, args []interface{}) (interface{}, error) {
+func (self *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (interface{}, error) {
 	v, err := self.fn(args)
 	if err != nil {
 		return nil, err

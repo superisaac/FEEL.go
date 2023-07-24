@@ -4,7 +4,22 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/mitchellh/mapstructure"
 )
+
+func decodeKWArgs(input map[string]interface{}, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		Metadata: nil,
+		TagName:  "json",
+		Result:   &output,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(input)
+}
 
 func installBuiltinFunctions(prelude *Prelude) {
 	// conversion functions
@@ -35,6 +50,32 @@ func installBuiltinFunctions(prelude *Prelude) {
 	prelude.BindNativeFunc("string length", func(s string) (int, error) {
 		return len(s), nil
 	}, []string{"string"})
+
+	type SubstringArgs struct {
+		Str      string  `json:"string"`
+		StartPos *Number `json:"start position"`
+		Length   *Number `json:"length,omitempty"`
+	}
+
+	prelude.BindRawNativeFunc("substring", func(kwargs map[string]interface{}) (interface{}, error) {
+		args := SubstringArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			return nil, err
+		}
+		startPos := int(args.StartPos.Int64())
+		if startPos >= len(args.Str) {
+			return "", nil
+		}
+		endPos := len(args.Str)
+		if args.Length != nil {
+			endPos = startPos + int(args.Length.Int64())
+			if endPos >= len(args.Str) {
+				endPos = len(args.Str)
+			}
+		}
+		subs := args.Str[startPos:endPos]
+		return subs, nil
+	}, []string{"string", "start position", "length"})
 
 	prelude.BindNativeFunc("upper case", func(s string) (string, error) {
 		return strings.ToUpper(s), nil

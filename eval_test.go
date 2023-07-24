@@ -71,6 +71,7 @@ func TestEvalPairs(t *testing.T) {
 		// builtin functions
 		{`is defined(x)`, false},
 		{`bind("x", 666); is defined(x)`, true},
+		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},
 	}
 
 	for _, p := range evalPairs {

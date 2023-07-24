@@ -93,7 +93,7 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		panic("second output does not implement error")
 	}
 
-	handler := func(args []interface{}) (interface{}, error) {
+	handler := func(args map[string]interface{}) (interface{}, error) {
 		// check inputs
 		if numIn > len(args)+firstArgNum {
 			return nil, errors.New("no enough params size")
@@ -105,7 +105,13 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		j := 0
 		for i := firstArgNum; i < numIn; i++ {
 			argType := funcType.In(i)
-			param := args[j]
+			argName := argNames[j]
+			param, ok := args[argName]
+			if !ok {
+				return nil, errors.New(
+					fmt.Sprintf("arg not found %s", argName),
+				)
+			}
 			j++
 
 			argValue, err := interfaceToValue(param, argType)

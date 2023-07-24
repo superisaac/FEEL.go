@@ -380,7 +380,7 @@ func (self FunCall) Eval(intp *Interpreter) (interface{}, error) {
 }
 
 func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (interface{}, error) {
-	var argVals []interface{}
+	argVals := make(map[string]interface{})
 	if self.keywordArgs {
 		kwArgMap, err := self.evalArgsToMap(intp)
 		if err != nil {
@@ -389,19 +389,22 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (interfa
 
 		for _, argName := range funDef.argNames {
 			if v, ok := kwArgMap[argName]; ok {
-				argVals = append(argVals, v)
+				argVals[argName] = v
 			} else {
 				//return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
-				argVals = append(argVals, Null)
+				//argVals = append(argVals, Null)
+				argVals[argName] = Null
 			}
 		}
 	} else {
-		for _, argNode := range self.Args {
+		for i, argNode := range self.Args {
 			a, err := argNode.arg.Eval(intp)
 			if err != nil {
 				return nil, err
 			}
-			argVals = append(argVals, a)
+			//argVals = append(argVals, a)
+			aName := funDef.argNames[i]
+			argVals[aName] = a
 		}
 	}
 	return funDef.Call(intp, argVals)
