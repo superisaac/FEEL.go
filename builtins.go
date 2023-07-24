@@ -75,7 +75,9 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		subs := args.Str[startPos:endPos]
 		return subs, nil
-	}, []string{"string", "start position", "length"})
+	},
+		[]string{"string", "start position"},
+		[]string{"length"})
 
 	prelude.BindNativeFunc("upper case", func(s string) (string, error) {
 		return strings.ToUpper(s), nil

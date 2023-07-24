@@ -71,6 +71,8 @@ func TestEvalPairs(t *testing.T) {
 		// builtin functions
 		{`is defined(x)`, false},
 		{`bind("x", 666); is defined(x)`, true},
+		{`substring(string: "abcdef", start position: 2, length: 3)`, "cde"},
+		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
 		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},
 	}
 

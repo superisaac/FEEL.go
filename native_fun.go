@@ -29,12 +29,22 @@ func (self ArgSizeError) Error() string {
 type NativeFunDef func(args map[string]interface{}) (interface{}, error)
 
 type NativeFun struct {
-	fn       NativeFunDef
-	argNames []string
+	fn               NativeFunDef
+	requiredArgNames []string
+	optionalArgNames []string
 }
 
 func NewNativeFunc(fn NativeFunDef) *NativeFun {
 	return &NativeFun{fn: fn}
+}
+
+func (self NativeFun) ArgNameAt(at int) (string, bool) {
+	if at >= 0 && at < len(self.requiredArgNames) {
+		return self.requiredArgNames[at], true
+	} else if at >= len(self.requiredArgNames) && at < len(self.requiredArgNames)+len(self.optionalArgNames) {
+		return self.optionalArgNames[at-len(self.requiredArgNames)], true
+	}
+	return "", false
 }
 
 func (self *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (interface{}, error) {
@@ -95,18 +105,50 @@ func (self *Prelude) Bind(name string, value interface{}) {
 	self.vars[name] = normalizeValue(value)
 }
 
-func (self *Prelude) BindNativeFunc(name string, fn interface{}, argNames []string) {
-	if isdup, argName := hasDupName(argNames); isdup {
+func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...[]string) {
+	var requiredArgNames []string
+	var optionalArgNames []string
+	if len(argControls) > 0 {
+		requiredArgNames = argControls[0]
+	}
+	if isdup, argName := hasDupName(requiredArgNames); isdup {
 		panic(fmt.Sprintf("native function %s has duplicate arg name %s", name, argName))
 	}
-	self.Bind(name, &NativeFun{fn: wrapTyped(fn, argNames), argNames: argNames})
+
+	if len(argControls) > 1 {
+		optionalArgNames = argControls[1]
+	}
+	if isdup, argName := hasDupName(optionalArgNames); isdup {
+		panic(fmt.Sprintf("native function %s has duplicate optional arg name %s", name, argName))
+	}
+	self.Bind(name, &NativeFun{
+		fn:               wrapTyped(fn, requiredArgNames),
+		requiredArgNames: requiredArgNames,
+		optionalArgNames: optionalArgNames,
+	})
 }
 
-func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argNames []string) {
-	if isdup, argName := hasDupName(argNames); isdup {
+func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argControls ...[]string) {
+	var requiredArgNames []string
+	var optionalArgNames []string
+	if len(argControls) > 0 {
+		requiredArgNames = argControls[0]
+	}
+	if isdup, argName := hasDupName(requiredArgNames); isdup {
 		panic(fmt.Sprintf("native function %s has duplicate arg name %s", name, argName))
 	}
-	self.Bind(name, &NativeFun{fn: fn, argNames: argNames})
+
+	if len(argControls) > 1 {
+		optionalArgNames = argControls[1]
+	}
+	if isdup, argName := hasDupName(optionalArgNames); isdup {
+		panic(fmt.Sprintf("native function %s has duplicate optional arg name %s", name, argName))
+	}
+	self.Bind(name, &NativeFun{
+		fn:               fn,
+		requiredArgNames: requiredArgNames,
+		optionalArgNames: optionalArgNames,
+	})
 }
 
 func (self *Prelude) BindMacro(name string, macroFunc MacroDef, argNames []string) {

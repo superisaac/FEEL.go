@@ -69,10 +69,6 @@ func (self Scope) normalizeScope() Scope {
 func NewIntepreter() *Interpreter {
 	intp := &Interpreter{}
 	intp.PushEmpty()
-	// builtin functions and variables
-	//intp.Bind("bind", NewNativeFunc(wrapTyped(nativeBind)))
-	//intp.Bind("not", NewNativeFunc(wrapTyped(nativeNot)))
-
 	return intp
 }
 
@@ -387,24 +383,38 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (interfa
 			return nil, err
 		}
 
-		for _, argName := range funDef.argNames {
+		for _, argName := range funDef.requiredArgNames {
 			if v, ok := kwArgMap[argName]; ok {
 				argVals[argName] = v
 			} else {
-				//return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
+				return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
 				//argVals = append(argVals, Null)
-				argVals[argName] = Null
+				//argVals[argName] = Null
+			}
+		}
+
+		for _, argName := range funDef.optionalArgNames {
+			if v, ok := kwArgMap[argName]; ok {
+				argVals[argName] = v
 			}
 		}
 	} else {
+		if len(self.Args) < len(funDef.requiredArgNames) {
+			reqArgs := strings.Join(funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)], ", ")
+			return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments %s required", reqArgs))
+		}
 		for i, argNode := range self.Args {
 			a, err := argNode.arg.Eval(intp)
 			if err != nil {
 				return nil, err
 			}
-			//argVals = append(argVals, a)
-			aName := funDef.argNames[i]
-			argVals[aName] = a
+			if i < len(funDef.requiredArgNames) {
+				argVals[funDef.requiredArgNames[i]] = a
+			} else if i < len(funDef.requiredArgNames)+len(funDef.optionalArgNames) {
+				argVals[funDef.optionalArgNames[i-len(funDef.requiredArgNames)]] = a
+			} else {
+				return nil, NewEvalError(-5002, "too many arguments")
+			}
 		}
 	}
 	return funDef.Call(intp, argVals)
