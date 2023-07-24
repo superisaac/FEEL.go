@@ -97,9 +97,16 @@ func (self *Prelude) Bind(name string, value interface{}) {
 
 func (self *Prelude) BindNativeFunc(name string, fn interface{}, argNames []string) {
 	if isdup, argName := hasDupName(argNames); isdup {
-		panic(fmt.Sprintf("nativee function %s has duplicate arg name %s", name, argName))
+		panic(fmt.Sprintf("native function %s has duplicate arg name %s", name, argName))
 	}
 	self.Bind(name, &NativeFun{fn: wrapTyped(fn, argNames), argNames: argNames})
+}
+
+func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argNames []string) {
+	if isdup, argName := hasDupName(argNames); isdup {
+		panic(fmt.Sprintf("native function %s has duplicate arg name %s", name, argName))
+	}
+	self.Bind(name, &NativeFun{fn: fn, argNames: argNames})
 }
 
 func (self *Prelude) BindMacro(name string, macroFunc MacroDef, argNames []string) {

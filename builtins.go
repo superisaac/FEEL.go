@@ -2,6 +2,7 @@ package feel
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -128,17 +129,30 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return r, nil
 	}, []string{"list"})
 
-	// prelude.BindNativeFunc("median", func(list []interface{}) (*Number, error) {
-	// 	sum := ParseNumber(0)
-	// 	cnt := 0
-	// 	for _, entry := range list {
-	// 		if numEntry, ok := entry.(*Number); ok {
-	// 			sum = sum.Add(numEntry)
-	// 			cnt++
-	// 		}
-	// 	}
-	// 	r := sum.FloatDiv(ParseNumber(cnt))
-	// 	return r, nil
-	// }, []string{"list"})
+	prelude.BindNativeFunc("median", func(list []interface{}) (*Number, error) {
+		var numberList []*Number
+
+		for _, entry := range list {
+			if numEntry, ok := entry.(*Number); ok {
+				numberList = append(numberList, numEntry)
+			}
+		}
+		if len(numberList) == 0 {
+			return nil, nil
+		} else if len(numberList) == 1 {
+			return numberList[0], nil
+		}
+
+		sort.Slice(numberList, func(i, j int) bool {
+			return numberList[i].Compare(*numberList[j]) == -1
+		})
+
+		if len(numberList)%2 == 1 {
+			return numberList[len(numberList)/2], nil
+		} else {
+			medPos := (len(numberList) / 2) - 1
+			return numberList[medPos].Add(numberList[medPos+1]).Mul(ParseNumber("0.5")), nil
+		}
+	}, []string{"list"})
 
 }
