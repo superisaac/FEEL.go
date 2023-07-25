@@ -105,7 +105,7 @@ func (self *Prelude) Bind(name string, value interface{}) {
 	self.vars[name] = normalizeValue(value)
 }
 
-func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...[]string) {
+func (self *Prelude) splitArgControls(name string, argControls [][]string) ([]string, []string) {
 	var requiredArgNames []string
 	var optionalArgNames []string
 	if len(argControls) > 0 {
@@ -125,7 +125,11 @@ func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...
 	if isdup, argName := hasDupName(append(requiredArgNames, optionalArgNames...)); isdup {
 		panic(fmt.Sprintf("native function %s has duplicate total arg name %s", name, argName))
 	}
+	return requiredArgNames, optionalArgNames
+}
 
+func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...[]string) {
+	requiredArgNames, optionalArgNames := self.splitArgControls(name, argControls)
 	self.Bind(name, &NativeFun{
 		fn:               wrapTyped(fn, requiredArgNames),
 		requiredArgNames: requiredArgNames,
@@ -134,25 +138,7 @@ func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...
 }
 
 func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argControls ...[]string) {
-	var requiredArgNames []string
-	var optionalArgNames []string
-	if len(argControls) > 0 {
-		requiredArgNames = argControls[0]
-	}
-	if isdup, argName := hasDupName(requiredArgNames); isdup {
-		panic(fmt.Sprintf("native function %s has duplicate arg name %s", name, argName))
-	}
-
-	if len(argControls) > 1 {
-		optionalArgNames = argControls[1]
-	}
-	if isdup, argName := hasDupName(optionalArgNames); isdup {
-		panic(fmt.Sprintf("native function %s has duplicate optional arg name %s", name, argName))
-	}
-
-	if isdup, argName := hasDupName(append(requiredArgNames, optionalArgNames...)); isdup {
-		panic(fmt.Sprintf("native function %s has duplicate total arg name %s", name, argName))
-	}
+	requiredArgNames, optionalArgNames := self.splitArgControls(name, argControls)
 	self.Bind(name, &NativeFun{
 		fn:               fn,
 		requiredArgNames: requiredArgNames,
