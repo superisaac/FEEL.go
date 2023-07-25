@@ -121,6 +121,11 @@ func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...
 	if isdup, argName := hasDupName(optionalArgNames); isdup {
 		panic(fmt.Sprintf("native function %s has duplicate optional arg name %s", name, argName))
 	}
+
+	if isdup, argName := hasDupName(append(requiredArgNames, optionalArgNames...)); isdup {
+		panic(fmt.Sprintf("native function %s has duplicate total arg name %s", name, argName))
+	}
+
 	self.Bind(name, &NativeFun{
 		fn:               wrapTyped(fn, requiredArgNames),
 		requiredArgNames: requiredArgNames,
@@ -143,6 +148,10 @@ func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argControls
 	}
 	if isdup, argName := hasDupName(optionalArgNames); isdup {
 		panic(fmt.Sprintf("native function %s has duplicate optional arg name %s", name, argName))
+	}
+
+	if isdup, argName := hasDupName(append(requiredArgNames, optionalArgNames...)); isdup {
+		panic(fmt.Sprintf("native function %s has duplicate total arg name %s", name, argName))
 	}
 	self.Bind(name, &NativeFun{
 		fn:               fn,
