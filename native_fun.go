@@ -38,6 +38,15 @@ func NewNativeFunc(fn NativeFunDef) *NativeFun {
 	return &NativeFun{fn: fn}
 }
 
+func (self *NativeFun) Required(argNames ...string) *NativeFun {
+	self.requiredArgNames = append(self.requiredArgNames, argNames...)
+	return self
+}
+func (self *NativeFun) Optional(argNames ...string) *NativeFun {
+	self.optionalArgNames = append(self.optionalArgNames, argNames...)
+	return self
+}
+
 func (self NativeFun) ArgNameAt(at int) (string, bool) {
 	if at >= 0 && at < len(self.requiredArgNames) {
 		return self.requiredArgNames[at], true
@@ -63,6 +72,19 @@ type Macro struct {
 	optionalArgNames []string
 }
 
+func NewMacro(fn MacroDef) *Macro {
+	return &Macro{fn: fn}
+}
+
+func (self *Macro) Required(argNames ...string) *Macro {
+	self.requiredArgNames = append(self.requiredArgNames, argNames...)
+	return self
+}
+func (self *Macro) Optional(argNames ...string) *Macro {
+	self.optionalArgNames = append(self.optionalArgNames, argNames...)
+	return self
+}
+
 // Prelude
 type Prelude struct {
 	vars map[string]interface{}
@@ -80,8 +102,7 @@ func GetPrelude() *Prelude {
 }
 
 func (self *Prelude) Load() {
-	//self.BindNativeFunc("bind", nativeBind, []string{"varname", "value"})
-	self.BindMacro("bind", func(intp *Interpreter, args []AST) (interface{}, error) {
+	self.Bind("bind", NewMacro(func(intp *Interpreter, args []AST) (interface{}, error) {
 		name, err := args[0].Eval(intp)
 		strName, ok := name.(string)
 		if !ok {
@@ -93,17 +114,18 @@ func (self *Prelude) Load() {
 		}
 		intp.Bind(strName, v)
 		return nil, nil
-	}, []string{"name", "value"})
+	}).Required("name", "value"))
 
 	installDatetimeFunctions(self)
 	installBuiltinFunctions(self)
 }
 
-func (self *Prelude) Bind(name string, value interface{}) {
+func (self *Prelude) Bind(name string, value interface{}) *Prelude {
 	if _, ok := self.vars[name]; ok {
 		panic(fmt.Sprintf("bind(), name '%s' already bound", name))
 	}
 	self.vars[name] = normalizeValue(value)
+	return self
 }
 
 func (self *Prelude) splitArgControls(name string, argControls [][]string) ([]string, []string) {
@@ -127,33 +149,6 @@ func (self *Prelude) splitArgControls(name string, argControls [][]string) ([]st
 		panic(fmt.Sprintf("native function %s has duplicate total arg name %s", name, argName))
 	}
 	return requiredArgNames, optionalArgNames
-}
-
-func (self *Prelude) BindNativeFunc(name string, fn interface{}, argControls ...[]string) {
-	requiredArgNames, optionalArgNames := self.splitArgControls(name, argControls)
-	self.Bind(name, &NativeFun{
-		fn:               wrapTyped(fn, requiredArgNames),
-		requiredArgNames: requiredArgNames,
-		optionalArgNames: optionalArgNames,
-	})
-}
-
-func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argControls ...[]string) {
-	requiredArgNames, optionalArgNames := self.splitArgControls(name, argControls)
-	self.Bind(name, &NativeFun{
-		fn:               fn,
-		requiredArgNames: requiredArgNames,
-		optionalArgNames: optionalArgNames,
-	})
-}
-
-func (self *Prelude) BindMacro(name string, macroFunc MacroDef, argControls ...[]string) {
-	requiredArgNames, optionalArgNames := self.splitArgControls(name, argControls)
-	self.Bind(name, &Macro{
-		fn:               macroFunc,
-		requiredArgNames: requiredArgNames,
-		optionalArgNames: optionalArgNames,
-	})
 }
 
 func (self *Prelude) Resolve(name string) (interface{}, bool) {

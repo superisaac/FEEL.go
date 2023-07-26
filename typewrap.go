@@ -54,7 +54,7 @@ func valueToInterface(tp reflect.Type, val reflect.Value) (interface{}, error) {
 	return output, nil
 }
 
-func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
+func wrapTyped(tfunc interface{}) *NativeFun {
 
 	funcType := reflect.TypeOf(tfunc)
 	if funcType.Kind() != reflect.Func {
@@ -77,9 +77,9 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 	// 	}
 	// }
 
-	if numIn != len(argNames)+firstArgNum {
-		panic(fmt.Sprintf("arg number msmatch, %d expected, but %d given", numIn-1, len(argNames)))
-	}
+	// if numIn != len(argNames)+firstArgNum {
+	// 	panic(fmt.Sprintf("arg number msmatch, %d expected, but %d given", numIn-1, len(argNames)))
+	// }
 
 	// check outputs
 	if funcType.NumOut() != 2 {
@@ -93,7 +93,8 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		panic("second output does not implement error")
 	}
 
-	handler := func(args map[string]interface{}) (interface{}, error) {
+	nativeFun := &NativeFun{}
+	nativeFun.fn = func(args map[string]interface{}) (interface{}, error) {
 		// check inputs
 		if numIn > len(args)+firstArgNum {
 			return nil, errors.New("no enough params size")
@@ -105,12 +106,13 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		j := 0
 		for i := firstArgNum; i < numIn; i++ {
 			argType := funcType.In(i)
-			argName := argNames[j]
+			argName, hasArg := nativeFun.ArgNameAt(i)
+			if !hasArg {
+				return nil, errors.New(fmt.Sprintf("arg not found at %d", i))
+			}
 			param, ok := args[argName]
 			if !ok {
-				return nil, errors.New(
-					fmt.Sprintf("arg not found %s", argName),
-				)
+				return nil, errors.New(fmt.Sprintf("arg not found %s", argName))
 			}
 			j++
 
@@ -140,5 +142,5 @@ func wrapTyped(tfunc interface{}, argNames []string) NativeFunDef {
 		return res, err
 	}
 
-	return handler
+	return nativeFun
 }

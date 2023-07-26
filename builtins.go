@@ -23,20 +23,20 @@ func decodeKWArgs(input map[string]interface{}, output interface{}) error {
 
 func installBuiltinFunctions(prelude *Prelude) {
 	// conversion functions
-	prelude.BindNativeFunc("string", func(v interface{}) (string, error) {
+	prelude.Bind("string", wrapTyped(func(v interface{}) (string, error) {
 		return fmt.Sprintf("%s", v), nil
-	}, []string{"from"})
+	}).Required("from"))
 
-	prelude.BindNativeFunc("number", func(v interface{}) (*Number, error) {
+	prelude.Bind("number", wrapTyped(func(v interface{}) (*Number, error) {
 		return ParseNumberWithErr(v)
-	}, []string{"from"})
+	}).Required("from"))
 
 	// boolean functions
-	prelude.BindNativeFunc("not", func(v interface{}) (bool, error) {
+	prelude.Bind("not", wrapTyped(func(v interface{}) (bool, error) {
 		return !boolValue(v), nil
-	}, []string{"from"})
+	}).Required("from"))
 
-	prelude.BindMacro("is defined", func(intp *Interpreter, args []AST) (interface{}, error) {
+	prelude.Bind("is defined", NewMacro(func(intp *Interpreter, args []AST) (interface{}, error) {
 		if varNode, ok := args[0].(*Var); ok {
 			if _, ok := intp.Resolve(varNode.Name); !ok {
 				return false, nil
@@ -44,21 +44,21 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		// TODO: more condition tests
 		return true, nil
-	}, []string{"value"})
+	}).Required("value"))
 
 	// string functions
-	prelude.BindNativeFunc("string length", func(s string) (int, error) {
+	prelude.Bind("string length", wrapTyped(func(s string) (int, error) {
 		return len(s), nil
-	}, []string{"string"})
+	}).Required("string"))
 
-	type SubstringArgs struct {
-		Str      string  `json:"string"`
-		StartPos *Number `json:"start position"`
-		Length   *Number `json:"length,omitempty"`
-	}
+	prelude.Bind("substring", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+		type substringArgs struct {
+			Str      string  `json:"string"`
+			StartPos *Number `json:"start position"`
+			Length   *Number `json:"length,omitempty"`
+		}
 
-	prelude.BindRawNativeFunc("substring", func(kwargs map[string]interface{}) (interface{}, error) {
-		args := SubstringArgs{}
+		args := substringArgs{}
 		if err := decodeKWArgs(kwargs, &args); err != nil {
 			return nil, err
 		}
@@ -75,45 +75,43 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		subs := args.Str[startPos:endPos]
 		return subs, nil
-	},
-		[]string{"string", "start position"},
-		[]string{"length"})
+	}).Required("string", "start position").Optional("length"))
 
-	prelude.BindNativeFunc("upper case", func(s string) (string, error) {
+	prelude.Bind("upper case", wrapTyped(func(s string) (string, error) {
 		return strings.ToUpper(s), nil
-	}, []string{"string"})
+	}).Required("string"))
 
-	prelude.BindNativeFunc("lower case", func(s string) (string, error) {
+	prelude.Bind("lower case", wrapTyped(func(s string) (string, error) {
 		return strings.ToLower(s), nil
-	}, []string{"string"})
+	}).Required("string"))
 
-	prelude.BindNativeFunc("contains", func(s string, match string) (bool, error) {
+	prelude.Bind("contains", wrapTyped(func(s string, match string) (bool, error) {
 		return strings.Contains(s, match), nil
-	}, []string{"string", "match"})
+	}).Required("string", "match"))
 
-	prelude.BindNativeFunc("starts with", func(s string, match string) (bool, error) {
+	prelude.Bind("starts with", wrapTyped(func(s string, match string) (bool, error) {
 		return strings.HasPrefix(s, match), nil
-	}, []string{"string", "match"})
+	}).Required("string", "match"))
 
-	prelude.BindNativeFunc("ends with", func(s string, match string) (bool, error) {
+	prelude.Bind("ends with", wrapTyped(func(s string, match string) (bool, error) {
 		return strings.HasSuffix(s, match), nil
-	}, []string{"string", "match"})
+	}).Required("string", "match"))
 
 	// list functions
-	prelude.BindNativeFunc("list contains", func(list []interface{}, elem interface{}) (bool, error) {
+	prelude.Bind("list contains", wrapTyped(func(list []interface{}, elem interface{}) (bool, error) {
 		for _, entry := range list {
 			if cmp, err := compareInterfaces(entry, elem); err == nil && cmp == 0 {
 				return true, err
 			}
 		}
 		return false, nil
-	}, []string{"list", "element"})
+	}).Required("list", "element"))
 
-	prelude.BindNativeFunc("count", func(list []interface{}) (int, error) {
+	prelude.Bind("count", wrapTyped(func(list []interface{}) (int, error) {
 		return len(list), nil
-	}, []string{"list"})
+	}).Required("list"))
 
-	prelude.BindNativeFunc("min", func(list []interface{}) (interface{}, error) {
+	prelude.Bind("min", wrapTyped(func(list []interface{}) (interface{}, error) {
 		var minValue interface{} = nil
 		for _, entry := range list {
 			if minValue == nil {
@@ -124,9 +122,9 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return minValue, nil
-	}, []string{"list"})
+	}).Required("list"))
 
-	prelude.BindNativeFunc("max", func(list []interface{}) (interface{}, error) {
+	prelude.Bind("max", wrapTyped(func(list []interface{}) (interface{}, error) {
 		var maxValue interface{} = nil
 		for _, entry := range list {
 			if maxValue == nil {
@@ -137,9 +135,9 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return maxValue, nil
-	}, []string{"list"})
+	}).Required("list"))
 
-	prelude.BindNativeFunc("sum", func(list []interface{}) (*Number, error) {
+	prelude.Bind("sum", wrapTyped(func(list []interface{}) (*Number, error) {
 		sum := ParseNumber(0)
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
@@ -147,9 +145,9 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return sum, nil
-	}, []string{"list"})
+	}).Required("list"))
 
-	prelude.BindNativeFunc("product", func(list []interface{}) (*Number, error) {
+	prelude.Bind("product", wrapTyped(func(list []interface{}) (*Number, error) {
 		sum := ParseNumber(1)
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
@@ -157,9 +155,9 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return sum, nil
-	}, []string{"list"})
+	}).Required("list"))
 
-	prelude.BindNativeFunc("mean", func(list []interface{}) (*Number, error) {
+	prelude.Bind("mean", wrapTyped(func(list []interface{}) (*Number, error) {
 		sum := ParseNumber(0)
 		cnt := 0
 		for _, entry := range list {
@@ -170,9 +168,9 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		r := sum.FloatDiv(ParseNumber(cnt))
 		return r, nil
-	}, []string{"list"})
+	}).Required("list"))
 
-	prelude.BindNativeFunc("median", func(list []interface{}) (*Number, error) {
+	prelude.Bind("median", wrapTyped(func(list []interface{}) (*Number, error) {
 		var numberList []*Number
 
 		for _, entry := range list {
@@ -196,6 +194,31 @@ func installBuiltinFunctions(prelude *Prelude) {
 			medPos := (len(numberList) / 2) - 1
 			return numberList[medPos].Add(numberList[medPos+1]).Mul(ParseNumber("0.5")), nil
 		}
-	}, []string{"list"})
+	}).Required("list"))
 
+	prelude.Bind("sublist", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+		type sublistArgs struct {
+			List     []interface{} `json:"list"`
+			StartPos *Number       `json:"start position"`
+			Length   *Number       `json:"length,omitempty"`
+		}
+
+		args := sublistArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			return nil, err
+		}
+		startPos := int(args.StartPos.Int64())
+		if startPos >= len(args.List) {
+			return "", nil
+		}
+		endPos := len(args.List)
+		if args.Length != nil {
+			endPos = startPos + int(args.Length.Int64())
+			if endPos >= len(args.List) {
+				endPos = len(args.List)
+			}
+		}
+		subs := args.List[startPos:endPos]
+		return subs, nil
+	}).Required("list", "start position").Optional("length"))
 }
