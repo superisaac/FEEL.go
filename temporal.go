@@ -176,7 +176,7 @@ func (self FEELDatetime) String() string {
 func (self *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
 	if dur.Years > 0 || dur.Months > 0 {
 		durMonths := dur.Years*12 + dur.Months
-		timeMonths := self.t.Year()*12 + int(self.t.Month() - 1)
+		timeMonths := self.t.Year()*12 + int(self.t.Month()-1)
 
 		newTimeMonths := timeMonths + durMonths
 		if dur.Neg {
@@ -184,7 +184,7 @@ func (self *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
 		}
 		return &FEELDatetime{
 			t: time.Date(
-				newTimeMonths/12, time.Month(newTimeMonths%12 + 1),
+				newTimeMonths/12, time.Month(newTimeMonths%12+1),
 				self.t.Day(), self.t.Hour(), self.t.Minute(),
 				self.t.Second(), self.t.Nanosecond(),
 				self.t.Location()),

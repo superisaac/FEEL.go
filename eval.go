@@ -410,6 +410,14 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (interfa
 				argVals[funDef.requiredArgNames[i]] = a
 			} else if i < len(funDef.requiredArgNames)+len(funDef.optionalArgNames) {
 				argVals[funDef.optionalArgNames[i-len(funDef.requiredArgNames)]] = a
+			} else if funDef.varArgName != "" {
+				if vars, ok := argVals[funDef.varArgName]; ok {
+					varargs := vars.([]interface{})
+					varargs = append(varargs, a)
+					argVals[funDef.varArgName] = varargs
+				} else {
+					argVals[funDef.varArgName] = []interface{}{a}
+				}
 			} else {
 				return nil, NewEvalError(-5002, "too many arguments")
 			}

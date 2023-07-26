@@ -32,6 +32,7 @@ type NativeFun struct {
 	fn               NativeFunDef
 	requiredArgNames []string
 	optionalArgNames []string
+	varArgName       string
 }
 
 func NewNativeFunc(fn NativeFunDef) *NativeFun {
@@ -42,8 +43,14 @@ func (self *NativeFun) Required(argNames ...string) *NativeFun {
 	self.requiredArgNames = append(self.requiredArgNames, argNames...)
 	return self
 }
+
 func (self *NativeFun) Optional(argNames ...string) *NativeFun {
 	self.optionalArgNames = append(self.optionalArgNames, argNames...)
+	return self
+}
+
+func (self *NativeFun) Vararg(argName string) *NativeFun {
+	self.varArgName = argName
 	return self
 }
 
@@ -126,29 +133,6 @@ func (self *Prelude) Bind(name string, value interface{}) *Prelude {
 	}
 	self.vars[name] = normalizeValue(value)
 	return self
-}
-
-func (self *Prelude) splitArgControls(name string, argControls [][]string) ([]string, []string) {
-	var requiredArgNames []string
-	var optionalArgNames []string
-	if len(argControls) > 0 {
-		requiredArgNames = argControls[0]
-	}
-	if isdup, argName := hasDupName(requiredArgNames); isdup {
-		panic(fmt.Sprintf("native function %s has duplicate arg name %s", name, argName))
-	}
-
-	if len(argControls) > 1 {
-		optionalArgNames = argControls[1]
-	}
-	if isdup, argName := hasDupName(optionalArgNames); isdup {
-		panic(fmt.Sprintf("native function %s has duplicate optional arg name %s", name, argName))
-	}
-
-	if isdup, argName := hasDupName(append(requiredArgNames, optionalArgNames...)); isdup {
-		panic(fmt.Sprintf("native function %s has duplicate total arg name %s", name, argName))
-	}
-	return requiredArgNames, optionalArgNames
 }
 
 func (self *Prelude) Resolve(name string) (interface{}, bool) {

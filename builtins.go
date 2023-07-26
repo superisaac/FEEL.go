@@ -2,10 +2,9 @@ package feel
 
 import (
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"sort"
 	"strings"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 func decodeKWArgs(input map[string]interface{}, output interface{}) error {
@@ -19,6 +18,23 @@ func decodeKWArgs(input map[string]interface{}, output interface{}) error {
 		return err
 	}
 	return decoder.Decode(input)
+}
+
+func extractList(args map[string]interface{}, argName string) ([]interface{}, error) {
+	if v, ok := args[argName]; ok {
+		if listV, ok := v.([]interface{}); ok {
+			if len(listV) == 1 {
+				if aList, ok := listV[0].([]interface{}); ok {
+					return aList, nil
+				}
+			}
+			return listV, nil
+		} else {
+			return nil, NewEvalError(-7002, "cannot extract list")
+		}
+	} else {
+		return nil, NewEvalError(-7001, "no argument name")
+	}
 }
 
 func installBuiltinFunctions(prelude *Prelude) {
@@ -107,11 +123,19 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return false, nil
 	}).Required("list", "element"))
 
-	prelude.Bind("count", wrapTyped(func(list []interface{}) (int, error) {
+	prelude.Bind("count", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		return len(list), nil
-	}).Required("list"))
+	}).Vararg("list"))
 
-	prelude.Bind("min", wrapTyped(func(list []interface{}) (interface{}, error) {
+	prelude.Bind("min", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		var minValue interface{} = nil
 		for _, entry := range list {
 			if minValue == nil {
@@ -122,9 +146,13 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return minValue, nil
-	}).Required("list"))
+	}).Vararg("list"))
 
-	prelude.Bind("max", wrapTyped(func(list []interface{}) (interface{}, error) {
+	prelude.Bind("max", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		var maxValue interface{} = nil
 		for _, entry := range list {
 			if maxValue == nil {
@@ -135,9 +163,13 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return maxValue, nil
-	}).Required("list"))
+	}).Vararg("list"))
 
-	prelude.Bind("sum", wrapTyped(func(list []interface{}) (*Number, error) {
+	prelude.Bind("sum", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		sum := ParseNumber(0)
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
@@ -145,9 +177,13 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return sum, nil
-	}).Required("list"))
+	}).Vararg("list"))
 
-	prelude.Bind("product", wrapTyped(func(list []interface{}) (*Number, error) {
+	prelude.Bind("product", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		sum := ParseNumber(1)
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
@@ -155,9 +191,13 @@ func installBuiltinFunctions(prelude *Prelude) {
 			}
 		}
 		return sum, nil
-	}).Required("list"))
+	}).Vararg("list"))
 
-	prelude.Bind("mean", wrapTyped(func(list []interface{}) (*Number, error) {
+	prelude.Bind("mean", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		sum := ParseNumber(0)
 		cnt := 0
 		for _, entry := range list {
@@ -168,9 +208,13 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		r := sum.FloatDiv(ParseNumber(cnt))
 		return r, nil
-	}).Required("list"))
+	}).Vararg("list"))
 
-	prelude.Bind("median", wrapTyped(func(list []interface{}) (*Number, error) {
+	prelude.Bind("median", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
 		var numberList []*Number
 
 		for _, entry := range list {
@@ -191,10 +235,10 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if len(numberList)%2 == 1 {
 			return numberList[len(numberList)/2], nil
 		} else {
-			medPos := (len(numberList) / 2) - 1
-			return numberList[medPos].Add(numberList[medPos+1]).Mul(ParseNumber("0.5")), nil
+			medPos := (len(numberList) / 2)
+			return numberList[medPos+1].Add(numberList[medPos]).Mul(ParseNumber("0.5")), nil
 		}
-	}).Required("list"))
+	}).Vararg("list"))
 
 	prelude.Bind("sublist", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
 		type sublistArgs struct {
