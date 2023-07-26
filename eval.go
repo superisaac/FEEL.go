@@ -388,8 +388,6 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (interfa
 				argVals[argName] = v
 			} else {
 				return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
-				//argVals = append(argVals, Null)
-				//argVals[argName] = Null
 			}
 		}
 
@@ -401,7 +399,7 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (interfa
 	} else {
 		if len(self.Args) < len(funDef.requiredArgNames) {
 			reqArgs := strings.Join(funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)], ", ")
-			return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments %s required", reqArgs))
+			return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
 		}
 		for i, argNode := range self.Args {
 			a, err := argNode.arg.Eval(intp)
@@ -436,7 +434,7 @@ func (self FunCall) evalArgsToMap(intp *Interpreter) (map[string]interface{}, er
 }
 
 func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (interface{}, error) {
-	if len(macro.argNames) != len(self.Args) {
+	if len(macro.requiredArgNames) > len(self.Args) {
 		return nil, NewEvalError(-1005, "number of args of macro mismatch")
 	}
 	var mArgs []AST

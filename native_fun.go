@@ -58,8 +58,9 @@ func (self *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (int
 // macro
 type MacroDef func(intp *Interpreter, args []AST) (interface{}, error)
 type Macro struct {
-	fn       MacroDef
-	argNames []string
+	fn               MacroDef
+	requiredArgNames []string
+	optionalArgNames []string
 }
 
 // Prelude
@@ -146,11 +147,13 @@ func (self *Prelude) BindRawNativeFunc(name string, fn NativeFunDef, argControls
 	})
 }
 
-func (self *Prelude) BindMacro(name string, macroFunc MacroDef, argNames []string) {
-	if isdup, argName := hasDupName(argNames); isdup {
-		panic(fmt.Sprintf("nativee function %s has duplicate arg name %s", name, argName))
-	}
-	self.Bind(name, &Macro{fn: macroFunc, argNames: argNames})
+func (self *Prelude) BindMacro(name string, macroFunc MacroDef, argControls ...[]string) {
+	requiredArgNames, optionalArgNames := self.splitArgControls(name, argControls)
+	self.Bind(name, &Macro{
+		fn:               macroFunc,
+		requiredArgNames: requiredArgNames,
+		optionalArgNames: optionalArgNames,
+	})
 }
 
 func (self *Prelude) Resolve(name string) (interface{}, bool) {
