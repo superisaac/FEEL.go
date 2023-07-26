@@ -174,6 +174,22 @@ func (self FEELDatetime) String() string {
 }
 
 func (self *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
+	if dur.Years > 0 || dur.Months > 0 {
+		durMonths := dur.Years*12 + dur.Months
+		timeMonths := self.t.Year()*12 + int(self.t.Month() - 1)
+
+		newTimeMonths := timeMonths + durMonths
+		if dur.Neg {
+			newTimeMonths = timeMonths - durMonths
+		}
+		return &FEELDatetime{
+			t: time.Date(
+				newTimeMonths/12, time.Month(newTimeMonths%12 + 1),
+				self.t.Day(), self.t.Hour(), self.t.Minute(),
+				self.t.Second(), self.t.Nanosecond(),
+				self.t.Location()),
+		}
+	}
 	return &FEELDatetime{t: self.t.Add(dur.Duration())}
 }
 
@@ -195,6 +211,14 @@ func ParseDatetime(temporalStr string) (*FEELDatetime, error) {
 		}
 	}
 	return nil, ErrParseTemporal
+}
+
+func MustParseDatetime(temporalStr string) *FEELDatetime {
+	t, err := ParseDatetime(temporalStr)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 type FEELDuration struct {
@@ -317,6 +341,9 @@ func ParseDuration(temporalStr string) (*FEELDuration, error) {
 			m, err := strconv.ParseInt(submatches[5], 10, 64)
 			if err != nil {
 				return nil, err
+			}
+			if m > 12 {
+				return nil, errors.New("months cannot exceed 12")
 			}
 			dur.Months = int(m)
 		}
