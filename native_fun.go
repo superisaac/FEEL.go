@@ -128,6 +128,18 @@ func (self *Prelude) Load() {
 		return nil, nil
 	}).Required("name", "value"))
 
+	self.Bind("block", NewMacro(func(intp *Interpreter, args map[string]AST, exprlist []AST) (interface{}, error) {
+		var lastValue interface{}
+		var err error
+		for _, expr := range exprlist {
+			lastValue, err = expr.Eval(intp)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return lastValue, nil
+	}).Vararg("express list"))
+
 	installDatetimeFunctions(self)
 	installBuiltinFunctions(self)
 }
