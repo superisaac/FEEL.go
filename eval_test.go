@@ -76,6 +76,10 @@ func TestEvalPairs(t *testing.T) {
 		{`substring(string: "abcdef", start position: 2, length: 3)`, "cde"},
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
 		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},
+
+		{`append(["hello"], " ", "world")`, []interface{}{"hello", " ", "world"}},
+		{`concatenate([2, 1], [3])`, []interface{}{ParseNumber(2), ParseNumber(1), ParseNumber(3)}},
+		{`insert before(["hello", "world"], 1, "another")`, []interface{}{"hello", "another", "world"}},
 	}
 
 	for _, p := range evalPairs {

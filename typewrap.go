@@ -55,7 +55,6 @@ func valueToInterface(tp reflect.Type, val reflect.Value) (interface{}, error) {
 }
 
 func wrapTyped(tfunc interface{}) *NativeFun {
-
 	funcType := reflect.TypeOf(tfunc)
 	if funcType.Kind() != reflect.Func {
 		panic("tfunc is not func type")

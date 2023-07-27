@@ -2,9 +2,11 @@ package feel
 
 import (
 	"fmt"
-	"github.com/mitchellh/mapstructure"
+	"math"
 	"sort"
 	"strings"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 func decodeKWArgs(input map[string]interface{}, output interface{}) error {
@@ -210,6 +212,37 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return r, nil
 	}).Vararg("list"))
 
+	prelude.Bind("stddev", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
+		sum := 0.0
+		cnt := 0
+		for _, entry := range list {
+			if numEntry, ok := entry.(*Number); ok {
+				//sum = sum.Add(numEntry)
+				sum += numEntry.Float64()
+				cnt++
+			}
+		}
+		if cnt == 0 {
+			return 0, nil
+		}
+
+		avg := sum / float64(cnt)
+
+		dev := 0.0
+		for _, entry := range list {
+			if numEntry, ok := entry.(*Number); ok {
+				n := numEntry.Float64()
+				dev += (n - avg) * (n - avg)
+			}
+		}
+
+		return math.Sqrt(dev / float64(cnt)), nil
+	}).Vararg("list"))
+
 	prelude.Bind("median", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
 		list, err := extractList(args, "list")
 		if err != nil {
@@ -240,6 +273,32 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 	}).Vararg("list"))
 
+	prelude.Bind("all", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range list {
+			if !boolValue(v) {
+				return false, nil
+			}
+		}
+		return true, nil
+	}).Vararg("list"))
+
+	prelude.Bind("any", NewNativeFunc(func(args map[string]interface{}) (interface{}, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range list {
+			if boolValue(v) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}).Vararg("list"))
+
 	prelude.Bind("sublist", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
 		type sublistArgs struct {
 			List     []interface{} `json:"list"`
@@ -265,4 +324,46 @@ func installBuiltinFunctions(prelude *Prelude) {
 		subs := args.List[startPos:endPos]
 		return subs, nil
 	}).Required("list", "start position").Optional("length"))
+
+	prelude.Bind("append", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+		type appendArgs struct {
+			List  []interface{} `json:"list"`
+			Items []interface{} `json:"items"`
+		}
+		args := appendArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			return nil, err
+		}
+		return append(args.List, args.Items...), nil
+	}).Required("list").Vararg("items"))
+
+	prelude.Bind("concatenate", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+		type concatArgs struct {
+			Lists [][]interface{} `json:"lists"`
+		}
+		args := concatArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			return nil, err
+		}
+		results := make([]interface{}, 0)
+		for _, list := range args.Lists {
+			results = append(results, list...)
+		}
+		return results, nil
+	}).Vararg("lists"))
+
+	prelude.Bind("insert before", wrapTyped(func(list []interface{}, pos *Number, newItem interface{}) (interface{}, error) {
+		position := pos.Int()
+		if position > len(list) {
+			position = len(list)
+		}
+		// make a copy of the original list
+		var tmpList []interface{}
+		tmpList = append(tmpList, list[:position]...)
+
+		//
+		newList := append(tmpList, newItem)
+		newList = append(newList[:], list[position:]...)
+		return newList, nil
+	}).Required("list", "position", "newItem"))
 }

@@ -67,6 +67,15 @@ func (self Number) Int64() int64 {
 	return i64v
 }
 
+func (self Number) Int() int {
+	return int(self.Int64())
+}
+
+func (self Number) Float64() float64 {
+	f64v, _ := self.v.Float64()
+	return f64v
+}
+
 func (self *Number) Add(other *Number) *Number {
 	newv := new(big.Float)
 	newv.SetPrec(Prec).Add(self.v, other.v)
@@ -136,3 +145,5 @@ func (self Number) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(self.String())
 }
+
+var Zero = ParseNumber(0)

@@ -33,6 +33,8 @@ func boolValue(condVal interface{}) bool {
 		return v != 0
 	case float64:
 		return v != 0.0
+	case *Number:
+		return !v.Equal(*Zero)
 	case bool:
 		return v
 	case string:
