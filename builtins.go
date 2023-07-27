@@ -52,8 +52,8 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return !boolValue(v), nil
 	}).Required("from"))
 
-	prelude.Bind("is defined", NewMacro(func(intp *Interpreter, args []AST) (interface{}, error) {
-		if varNode, ok := args[0].(*Var); ok {
+	prelude.Bind("is defined", NewMacro(func(intp *Interpreter, args map[string]AST, varArgs []AST) (interface{}, error) {
+		if varNode, ok := args["value"].(*Var); ok {
 			if _, ok := intp.Resolve(varNode.Name); !ok {
 				return false, nil
 			}

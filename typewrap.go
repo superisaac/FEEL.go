@@ -96,7 +96,7 @@ func wrapTyped(tfunc interface{}) *NativeFun {
 	nativeFun := &NativeFun{}
 	nativeFun.fn = func(args map[string]interface{}) (interface{}, error) {
 		// check inputs
-		if numIn > len(args)+firstArgNum {
+		if numIn > firstArgNum+len(nativeFun.requiredArgNames) {
 			return nil, errors.New("no enough params size")
 		}
 

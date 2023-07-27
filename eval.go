@@ -445,11 +445,46 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (interface{}, err
 	if len(macro.requiredArgNames) > len(self.Args) {
 		return nil, NewEvalError(-1005, "number of args of macro mismatch")
 	}
-	var mArgs []AST
-	for _, arg := range self.Args {
-		mArgs = append(mArgs, arg.arg)
+
+	argASTs := make(map[string]AST)
+	var varArgs []AST
+	if self.keywordArgs {
+		kwArgMap := make(map[string]AST)
+		for _, argNode := range self.Args {
+			kwArgMap[argNode.argName] = argNode.arg
+		}
+
+		for _, argName := range macro.requiredArgNames {
+			if ast, ok := kwArgMap[argName]; ok {
+				argASTs[argName] = ast
+			} else {
+				return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
+			}
+		}
+
+		for _, argName := range macro.optionalArgNames {
+			if ast, ok := kwArgMap[argName]; ok {
+				argASTs[argName] = ast
+			}
+		}
+	} else {
+		if len(self.Args) < len(macro.requiredArgNames) {
+			reqArgs := strings.Join(macro.requiredArgNames[len(self.Args):len(macro.requiredArgNames)], ", ")
+			return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
+		}
+		for i, argNode := range self.Args {
+			if i < len(macro.requiredArgNames) {
+				argASTs[macro.requiredArgNames[i]] = argNode.arg
+			} else if i < len(macro.requiredArgNames)+len(macro.optionalArgNames) {
+				argASTs[macro.optionalArgNames[i-len(macro.requiredArgNames)]] = argNode.arg
+			} else if macro.varArgName != "" {
+				varArgs = append(varArgs, argNode.arg)
+			} else {
+				return nil, NewEvalError(-5002, "too many arguments")
+			}
+		}
 	}
-	return macro.fn(intp, mArgs)
+	return macro.fn(intp, argASTs, varArgs)
 }
 
 func (self FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (interface{}, error) {

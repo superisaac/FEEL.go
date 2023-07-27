@@ -65,12 +65,14 @@ func TestEvalPairs(t *testing.T) {
 		{`last day of month(@"2023-06-11")`, ParseNumber(30)},
 		{`last day of month(@"2023-07-11")`, ParseNumber(31)},
 
-		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, MustParseDatetime("2023-07-21T11:54:32@CST")},
-		{`@"2023-06-01T10:33:20@CST" + @"P3Y11M"`, MustParseDatetime("2027-05-01T10:33:20@CST")},
+		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, MustParseDatetime("2023-07-21T11:54:32@CST")}, // test day/hour/min duration
+		{`@"2023-06-01T10:33:20@CST" + @"P3Y11M"`, MustParseDatetime("2027-05-01T10:33:20@CST")}, // test year/month duration
 
 		// builtin functions
 		{`is defined(x)`, false},
-		{`bind("x", 666); is defined(x)`, true},
+		{`bind("x", 666); is defined(x)`, true},        // `x` is bound
+		{`bind("x", 888); is defined(value: x)`, true}, // macro can use keyword arguments
+
 		{`substring(string: "abcdef", start position: 2, length: 3)`, "cde"},
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
 		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},

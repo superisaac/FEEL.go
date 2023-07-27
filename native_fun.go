@@ -72,11 +72,12 @@ func (self *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (int
 }
 
 // macro
-type MacroDef func(intp *Interpreter, args []AST) (interface{}, error)
+type MacroDef func(intp *Interpreter, args map[string]AST, varArgs []AST) (interface{}, error)
 type Macro struct {
 	fn               MacroDef
 	requiredArgNames []string
 	optionalArgNames []string
+	varArgName       string
 }
 
 func NewMacro(fn MacroDef) *Macro {
@@ -89,6 +90,10 @@ func (self *Macro) Required(argNames ...string) *Macro {
 }
 func (self *Macro) Optional(argNames ...string) *Macro {
 	self.optionalArgNames = append(self.optionalArgNames, argNames...)
+	return self
+}
+func (self *Macro) Vararg(argName string) *Macro {
+	self.varArgName = argName
 	return self
 }
 
@@ -109,13 +114,13 @@ func GetPrelude() *Prelude {
 }
 
 func (self *Prelude) Load() {
-	self.Bind("bind", NewMacro(func(intp *Interpreter, args []AST) (interface{}, error) {
-		name, err := args[0].Eval(intp)
+	self.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]AST, varArgs []AST) (interface{}, error) {
+		name, err := args["name"].Eval(intp)
 		strName, ok := name.(string)
 		if !ok {
-			return nil, NewEvalError(-9001, "arg[0].type is not string")
+			return nil, NewEvalError(-9001, "arg[name].type is not string")
 		}
-		v, err := args[1].Eval(intp)
+		v, err := args["value"].Eval(intp)
 		if err != nil {
 			return nil, err
 		}
