@@ -495,4 +495,27 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		return newList, nil
 	}).Required("list", "predicates"))
+
+	prelude.Bind("string join", NewNativeFunc(func(kwargs map[string]any) (any, error) {
+		type joinArgs struct {
+			List      []any  `json:"list"`
+			Delimiter string `json:"delimiter,omitempty"`
+			Prefix    string `json:"prefix,omitempty"`
+			Suffix    string `json:"suffix,omitempty"`
+		}
+		args := joinArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			return nil, err
+		}
+		strArray := make([]string, 0)
+		for _, v := range args.List {
+			if s, ok := v.(string); ok {
+				strArray = append(strArray, s)
+			} else if _, ok := v.(*NullValue); !ok {
+				return Null, nil
+			}
+		}
+		joined := fmt.Sprintf("%s%s%s", args.Prefix, strings.Join(strArray, args.Delimiter), args.Suffix)
+		return joined, nil
+	}).Required("list").Optional("delimiter", "prefix", "suffix"))
 }

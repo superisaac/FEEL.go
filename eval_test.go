@@ -84,6 +84,9 @@ func TestEvalPairs(t *testing.T) {
 
 		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []interface{}{"a", "hello", "world"}},
 		{`sort([8, -1, 3], function(x, y) x > y)`, []interface{}{ParseNumber(8), ParseNumber(3), ParseNumber(-1)}},
+
+		{`string join(["hello", "world"])`, "helloworld"},
+		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]"},
 	}
 
 	for _, p := range evalPairs {
