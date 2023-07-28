@@ -352,7 +352,8 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return results, nil
 	}).Vararg("lists"))
 
-	prelude.Bind("insert before", wrapTyped(func(list []interface{}, pos *Number, newItem interface{}) (interface{}, error) {
+	prelude.Bind("insert before", wrapTyped(func(list []interface{}, pos *Number, newItem interface{}) ([]interface{}, error) {
+		// The position starts at the index 1. The last position is -1
 		position := pos.Int()
 		if position > len(list) {
 			position = len(list)
@@ -366,4 +367,132 @@ func installBuiltinFunctions(prelude *Prelude) {
 		newList = append(newList[:], list[position:]...)
 		return newList, nil
 	}).Required("list", "position", "newItem"))
+
+	prelude.Bind("remove", wrapTyped(func(list []interface{}, pos *Number) ([]interface{}, error) {
+		// The position starts at the index 1. The last position is -1
+		position := pos.Int()
+		if position > len(list) {
+			position = len(list)
+		}
+		// make a copy of the original list
+		var tmpList []interface{}
+		tmpList = append(tmpList, list[:position]...)
+		//
+		newList := append(tmpList, list[(position+1):]...)
+		return newList, nil
+	}).Required("list", "position"))
+
+	prelude.Bind("reverse", wrapTyped(func(list []interface{}) ([]interface{}, error) {
+		var reversed []interface{}
+		for i := len(list) - 1; i >= 0; i-- {
+			reversed = append(reversed, list[i])
+		}
+		return reversed, nil
+	}).Required("list"))
+
+	prelude.Bind("index of", wrapTyped(func(list []any, match interface{}) (int, error) {
+		for i, elem := range list {
+			if cmp, err := compareInterfaces(elem, match); err == nil && cmp == 0 {
+				return i, nil
+			}
+		}
+		return -1, nil
+	}).Required("list", "match"))
+
+	prelude.Bind("union", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+		type unionArgs struct {
+			Lists [][]interface{} `json:"lists"`
+		}
+		args := unionArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			return nil, err
+		}
+		elemSet := make([]interface{}, 0)
+		for _, list := range args.Lists {
+			for _, elem := range list {
+				found := false
+				for _, setElem := range elemSet {
+					if cmp, err := compareInterfaces(elem, setElem); err == nil && cmp == 0 {
+						found = true
+						break
+					}
+				}
+				if !found {
+					elemSet = append(elemSet, elem)
+				}
+			}
+		}
+		return elemSet, nil
+	}).Vararg("lists"))
+
+	prelude.Bind("distinct values", wrapTyped(func(list []any) ([]any, error) {
+		elemSet := make([]interface{}, 0)
+		for _, elem := range list {
+			found := false
+			for _, setElem := range elemSet {
+				if cmp, err := compareInterfaces(elem, setElem); err == nil && cmp == 0 {
+					found = true
+					break
+				}
+			}
+			if !found {
+				elemSet = append(elemSet, elem)
+			}
+		}
+		return elemSet, nil
+	}).Required("list"))
+
+	prelude.Bind("flatten", wrapTyped(func(list []any) ([]any, error) {
+		flattened := make([]interface{}, 0)
+		var flattenInterface func(v interface{})
+		flattenInterface = func(v interface{}) {
+			if arr, ok := v.([]interface{}); ok {
+				for _, a := range arr {
+					flattenInterface(a)
+				}
+			} else {
+				flattened = append(flattened, v)
+			}
+		}
+		for _, elem := range list {
+			flattenInterface(elem)
+		}
+		return flattened, nil
+	}).Required("list"))
+
+	prelude.Bind("sort", NewMacro(func(intp *Interpreter, args map[string]AST, varargs []AST) (interface{}, error) {
+		vlist, err := args["list"].Eval(intp)
+		if err != nil {
+			return nil, err
+		}
+		list, ok := vlist.([]any)
+		if !ok {
+			return nil, NewEvalError(-4080, "the first argument is not list")
+		}
+
+		vpred, err := args["predicates"].Eval(intp)
+		if err != nil {
+			return nil, err
+		}
+		predicates, ok := vpred.(*FunDef)
+		if !ok {
+			return nil, NewEvalError(-4080, "the second argument is not function")
+		}
+
+		newList := append([]any{}, list...)
+		var sortErr error
+		sort.Slice(newList, func(i, j int) bool {
+			r, err := predicates.EvalCall(intp, []any{newList[i], newList[j]})
+			if err != nil {
+				//panic(err)
+				sortErr = err
+				return false
+			}
+			return boolValue(r)
+		})
+		if sortErr != nil {
+			return nil, sortErr
+		}
+		return newList, nil
+	}).Required("list", "predicates"))
 }

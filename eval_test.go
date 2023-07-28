@@ -80,6 +80,10 @@ func TestEvalPairs(t *testing.T) {
 		{`append(["hello"], " ", "world")`, []interface{}{"hello", " ", "world"}},
 		{`concatenate([2, 1], [3])`, []interface{}{ParseNumber(2), ParseNumber(1), ParseNumber(3)}},
 		{`insert before(["hello", "world"], 1, "another")`, []interface{}{"hello", "another", "world"}},
+		{`remove(["hello", "a", "world"], 1)`, []interface{}{"hello", "world"}},
+
+		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []interface{}{"a", "hello", "world"}},
+		{`sort([8, -1, 3], function(x, y) x > y)`, []interface{}{ParseNumber(8), ParseNumber(3), ParseNumber(-1)}},
 	}
 
 	for _, p := range evalPairs {

@@ -360,6 +360,18 @@ func (self FunDef) Eval(intp *Interpreter) (interface{}, error) {
 	}, nil
 }
 
+func (self FunDef) EvalCall(intp *Interpreter, args []any) (any, error) {
+	if len(args) != len(self.Args) {
+		return nil, errors.New("eval call argument size mismatch")
+	}
+	intp.PushEmpty()
+	defer intp.Pop()
+	for i, argName := range self.Args {
+		intp.Bind(argName, args[i])
+	}
+	return self.Body.Eval(intp)
+}
+
 func (self FunCall) Eval(intp *Interpreter) (interface{}, error) {
 	v, err := self.FunRef.Eval(intp)
 	if err != nil {
