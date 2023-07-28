@@ -82,6 +82,12 @@ func TestEvalPairs(t *testing.T) {
 		{`insert before(["hello", "world"], 1, "another")`, []interface{}{"hello", "another", "world"}},
 		{`remove(["hello", "a", "world"], 1)`, []interface{}{"hello", "world"}},
 
+		{`index of([1,2,3,2],2)`, []any{ParseNumber(1), ParseNumber(3)}},
+
+		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []interface{}{ParseNumber(1), ParseNumber(2), ParseNumber(3)}},
+		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []interface{}{"a", "b", "c", "d"}},
+		{`union(["a", "b"], ["b", "c"], ["d"])`, []interface{}{"a", "b", "c", "d"}},
+
 		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []interface{}{"a", "hello", "world"}},
 		{`sort([8, -1, 3], function(x, y) x > y)`, []interface{}{ParseNumber(8), ParseNumber(3), ParseNumber(-1)}},
 
