@@ -180,7 +180,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if err != nil {
 			return nil, err
 		}
-		sum := ParseNumber(0)
+		sum := Zero
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
 				sum = sum.Add(numEntry)
@@ -194,7 +194,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if err != nil {
 			return nil, err
 		}
-		sum := ParseNumber(1)
+		sum := N(1)
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
 				sum = sum.Mul(numEntry)
@@ -208,7 +208,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if err != nil {
 			return nil, err
 		}
-		sum := ParseNumber(0)
+		sum := Zero
 		cnt := 0
 		for _, entry := range list {
 			if numEntry, ok := entry.(*Number); ok {
@@ -216,7 +216,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 				cnt++
 			}
 		}
-		r := sum.FloatDiv(ParseNumber(cnt))
+		r := sum.FloatDiv(N(cnt))
 		return r, nil
 	}).Vararg("list"))
 
@@ -277,7 +277,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 			return numberList[len(numberList)/2], nil
 		} else {
 			medPos := (len(numberList) / 2)
-			return numberList[medPos+1].Add(numberList[medPos]).Mul(ParseNumber("0.5")), nil
+			return numberList[medPos+1].Add(numberList[medPos]).Mul(N("0.5")), nil
 		}
 	}).Vararg("list"))
 
@@ -402,7 +402,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		matched := make([]any, 0)
 		for i, elem := range list {
 			if cmp, err := compareInterfaces(elem, match); err == nil && cmp == 0 {
-				matched = append(matched, ParseNumber(toFEELIndex(i)))
+				matched = append(matched, N(toFEELIndex(i)))
 			}
 		}
 		return matched, nil
@@ -527,4 +527,57 @@ func installBuiltinFunctions(prelude *Prelude) {
 		joined := fmt.Sprintf("%s%s%s", args.Prefix, strings.Join(strArray, args.Delimiter), args.Suffix)
 		return joined, nil
 	}).Required("list").Optional("delimiter", "prefix", "suffix"))
+
+	// context/map functions
+	// prelude.Bind("get value", wrapTyped(func(ctx map[string]any, key string) (any, error) {
+	prelude.Bind("get value", NewNativeFunc(func(kwargs map[string]any) (any, error) {
+		type getvalueByKey struct {
+			Context map[string]any `json:"context"`
+			Key     string         `json:"key"`
+		}
+
+		type getvalueByKeys struct {
+			Context map[string]any `json:"context"`
+			Keys    []string       `json:"key"`
+		}
+
+		argsByKey := getvalueByKey{}
+
+		if err := decodeKWArgs(kwargs, &argsByKey); err != nil {
+			argsByKeys := getvalueByKeys{}
+			if err := decodeKWArgs(kwargs, &argsByKeys); err != nil {
+				return nil, err
+			} else if len(argsByKeys.Keys) > 0 {
+				ctx := argsByKeys.Context
+				for i, key := range argsByKeys.Keys {
+					if i == len(argsByKeys.Keys)-1 {
+						if v, ok := ctx[key]; ok {
+							return v, nil
+						} else {
+							return Null, nil
+						}
+					} else {
+						v, ok := ctx[key]
+						if !ok {
+							return Null, nil
+						}
+						if subctx, ok := v.(map[string]any); ok {
+							ctx = subctx
+						} else {
+							return Null, nil
+						}
+					}
+				}
+			} else {
+				return Null, nil
+			}
+		} else {
+			if v, ok := argsByKey.Context[argsByKey.Key]; ok {
+				return v, nil
+			} else {
+				return Null, nil
+			}
+		}
+		return Null, nil
+	}).Required("context", "key"))
 }

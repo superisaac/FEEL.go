@@ -1,6 +1,7 @@
 package feel
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -23,6 +24,10 @@ type NullValue struct {
 
 func (self NullValue) Equal(other NullValue) bool {
 	return true
+}
+
+func (self NullValue) MarshalJSON() ([]byte, error) {
+	return json.Marshal(nil)
 }
 
 var Null = &NullValue{}

@@ -54,7 +54,7 @@ func ParseNumberWithErr(v interface{}) (*Number, error) {
 	}
 }
 
-func ParseNumber(v interface{}) *Number {
+func N(v interface{}) *Number {
 	n, err := ParseNumberWithErr(v)
 	if err != nil {
 		panic(err)
@@ -146,4 +146,4 @@ func (self Number) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.String())
 }
 
-var Zero = ParseNumber(0)
+var Zero = N(0)

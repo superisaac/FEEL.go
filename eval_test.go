@@ -19,9 +19,9 @@ func TestEvalPairs(t *testing.T) {
 		// empty input outputs nil
 		{"", nil},
 
-		{"5 + -6", ParseNumber(-1)},
-		{"5 + 6", ParseNumber(11)},
-		{"(function(a) 2 * a)(5)", ParseNumber(10)},
+		{"5 + -6", N(-1)},
+		{"5 + 6", N(11)},
+		{"(function(a) 2 * a)(5)", N(10)},
 		{"true", true},
 		{"false", false},
 		{`"hello" + " world"`, "hello world"},
@@ -49,21 +49,21 @@ func TestEvalPairs(t *testing.T) {
 		{`not( 5 >  6)`, true},
 
 		// loop functions
-		{`some x in [3, 4, 5] satisfies x >= 4`, ParseNumber(4)},
-		{`every y in [3, 4, 5] satisfies y >= 4`, []any{ParseNumber(4), ParseNumber(5)}},
+		{`some x in [3, 4, 5] satisfies x >= 4`, N(4)},
+		{`every y in [3, 4, 5] satisfies y >= 4`, []any{N(4), N(5)}},
 
 		// null check
 		{`a != null and a.b > 10`, false},
 		{`a = null or a.b > 10`, true},
 
 		// keyword arguments
-		{`bind("sub", function(a, b) a - b); sub(a: 4, b: 2)`, ParseNumber(2)},
+		{`bind("sub", function(a, b) a - b); sub(a: 4, b: 2)`, N(2)},
 
 		// temporal expressions
-		{`last day of month(@"2020-02-11")`, ParseNumber(29)},
-		{`last day of month(@"2021-01-07")`, ParseNumber(31)},
-		{`last day of month(@"2023-06-11")`, ParseNumber(30)},
-		{`last day of month(@"2023-07-11")`, ParseNumber(31)},
+		{`last day of month(@"2020-02-11")`, N(29)},
+		{`last day of month(@"2021-01-07")`, N(31)},
+		{`last day of month(@"2023-06-11")`, N(30)},
+		{`last day of month(@"2023-07-11")`, N(31)},
 
 		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, MustParseDatetime("2023-07-21T11:54:32@CST")}, // test day/hour/min duration
 		{`@"2023-06-01T10:33:20@CST" + @"P3Y11M"`, MustParseDatetime("2027-05-01T10:33:20@CST")}, // test year/month duration
@@ -75,24 +75,30 @@ func TestEvalPairs(t *testing.T) {
 
 		{`substring(string: "abcdef", start position: 3, length: 3)`, "cde"},
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
-		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},
+		{`median([3, 5, 9, 1, "hello", -2])`, N(3)},
 
 		{`append(["hello"], " ", "world")`, []any{"hello", " ", "world"}},
-		{`concatenate([2, 1], [3])`, []any{ParseNumber(2), ParseNumber(1), ParseNumber(3)}},
+		{`concatenate([2, 1], [3])`, []any{N(2), N(1), N(3)}},
 		{`insert before(["hello", "world"], 2, "another")`, []any{"hello", "another", "world"}},
 		{`remove(["hello", "a", "world"], 2)`, []any{"hello", "world"}},
 
-		{`index of([1,2,3,2],2)`, []any{ParseNumber(2), ParseNumber(4)}},
+		{`index of([1,2,3,2],2)`, []any{N(2), N(4)}},
 
-		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []any{ParseNumber(1), ParseNumber(2), ParseNumber(3)}},
+		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []any{N(1), N(2), N(3)}},
 		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []any{"a", "b", "c", "d"}},
 		{`union(["a", "b"], ["b", "c"], ["d"])`, []any{"a", "b", "c", "d"}},
 
 		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []any{"a", "hello", "world"}},
-		{`sort([8, -1, 3], function(x, y) x > y)`, []any{ParseNumber(8), ParseNumber(3), ParseNumber(-1)}},
+		{`sort([8, -1, 3], function(x, y) x > y)`, []any{N(8), N(3), N(-1)}},
 
 		{`string join(["hello", "world"])`, "helloworld"},
 		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]"},
+
+		{`get value({a: 2}, "b")`, Null},
+		{`get value({a: 2}, "a")`, N(2)},
+		{`get value({a: {b: {c: 4}}}, ["a", "b", "c"])`, N(4)},
+		{`get value({a: {b: {c: 4}}}, ["a", "b"])`, map[string]any{"c": N(4)}},
+		{`get value({a: {b: {c: 4}}}, ["a", "k"])`, Null},
 	}
 
 	for _, p := range evalPairs {
@@ -116,17 +122,17 @@ func TestTemporalValue(t *testing.T) {
 	input := `@"2023-06-07".day`
 	v, err := EvalString(input)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, v, ParseNumber(7))
+	assert.DeepEqual(t, v, N(7))
 
 	input1 := `@"2023-06-07T15:08:39".second`
 	v1, err := EvalString(input1)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, v1, ParseNumber(39))
+	assert.DeepEqual(t, v1, N(39))
 
 	input2 := `@"P1DT3H25M60S".minutes`
 	v2, err := EvalString(input2)
 	assert.NilError(t, err)
-	assert.DeepEqual(t, v2, ParseNumber(25))
+	assert.DeepEqual(t, v2, N(25))
 
 	dt, err := ParseDatetime(`2023-06-07T15:04:05`)
 	assert.NilError(t, err)
