@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func (self Binop) Eval(intp *Interpreter) (interface{}, error) {
+func (self Binop) Eval(intp *Interpreter) (any, error) {
 	switch self.Op {
 	case "and":
 		return self.andOp(intp)
@@ -45,10 +45,10 @@ func (self Binop) Eval(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-type evalNumbers func(a, b *Number) interface{}
-type evalStrings func(a, b string) interface{}
+type evalNumbers func(a, b *Number) any
+type evalStrings func(a, b string) any
 
-func (self Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (interface{}, error) {
+func (self Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (any, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (self Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (interf
 	return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad type in op, %T %s %T", leftVal, op, rightVal))
 }
 
-func compareInterfaces(leftVal, rightVal interface{}) (int, error) {
+func compareInterfaces(leftVal, rightVal any) (int, error) {
 	switch v := leftVal.(type) {
 	case string:
 		if rightString, ok := rightVal.(string); ok {
@@ -99,19 +99,19 @@ func compareInterfaces(leftVal, rightVal interface{}) (int, error) {
 				return 1, nil
 			}
 		}
-	case []interface{}:
-		if rightArr, ok := rightVal.([]interface{}); ok {
+	case []any:
+		if rightArr, ok := rightVal.([]any); ok {
 			return compareArrays(v, rightArr)
 		}
-	case map[string]interface{}:
-		if rightMap, ok := rightVal.(map[string]interface{}); ok {
+	case map[string]any:
+		if rightMap, ok := rightVal.(map[string]any); ok {
 			return compareMaps(v, rightMap)
 		}
 	}
 	return 0, NewEvalError(-3106, "invalid types", fmt.Sprintf("bad type in comparation, %T vs. %T", leftVal, rightVal))
 }
 
-func compareArrays(a, b []interface{}) (int, error) {
+func compareArrays(a, b []any) (int, error) {
 	minSize := len(a)
 	if minSize > len(b) {
 		minSize = len(b)
@@ -134,7 +134,7 @@ func compareArrays(a, b []interface{}) (int, error) {
 	}
 }
 
-func compareMaps(a, b map[string]interface{}) (int, error) {
+func compareMaps(a, b map[string]any) (int, error) {
 	if len(a) > len(b) {
 		return 1, nil
 	} else if len(a) < len(b) {
@@ -168,7 +168,7 @@ func (self Binop) compareValues(intp *Interpreter) (int, error) {
 	return compareInterfaces(leftVal, rightVal)
 }
 
-func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (interface{}, error) {
+func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (any, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -207,38 +207,38 @@ func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op 
 	return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad type in op, %T %s %T", leftVal, op, rightVal))
 }
 
-func (self Binop) addOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) addOp(intp *Interpreter) (any, error) {
 	return self.typedOp(
 		intp,
-		func(a, b string) interface{} { return a + b },
-		func(a, b *Number) interface{} { return a.Add(b) },
+		func(a, b string) any { return a + b },
+		func(a, b *Number) any { return a.Add(b) },
 		"+",
 	)
 }
 
-func (self Binop) subOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) subOp(intp *Interpreter) (any, error) {
 	return self.typedOp(
 		intp,
 		nil,
-		func(a, b *Number) interface{} { return a.Sub(b) },
+		func(a, b *Number) any { return a.Sub(b) },
 		"-")
 }
 
-func (self Binop) mulOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) mulOp(intp *Interpreter) (any, error) {
 	return self.numberOp(
 		intp,
-		func(a, b *Number) interface{} { return a.Mul(b) },
+		func(a, b *Number) any { return a.Mul(b) },
 		"*")
 }
 
-func (self Binop) divOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) divOp(intp *Interpreter) (any, error) {
 	return self.numberOp(
 		intp,
-		func(a, b *Number) interface{} { return a.IntDiv(b) },
+		func(a, b *Number) any { return a.IntDiv(b) },
 		"/")
 }
 
-func (self Binop) compareGTOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) compareGTOp(intp *Interpreter) (any, error) {
 	r, err := self.compareValues(intp)
 	if err != nil {
 		return false, err
@@ -247,7 +247,7 @@ func (self Binop) compareGTOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) compareGEOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) compareGEOp(intp *Interpreter) (any, error) {
 	r, err := self.compareValues(intp)
 	if err != nil {
 		return false, err
@@ -256,7 +256,7 @@ func (self Binop) compareGEOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) compareLTOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) compareLTOp(intp *Interpreter) (any, error) {
 	r, err := self.compareValues(intp)
 	if err != nil {
 		return false, err
@@ -265,7 +265,7 @@ func (self Binop) compareLTOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) compareLEOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) compareLEOp(intp *Interpreter) (any, error) {
 	r, err := self.compareValues(intp)
 	if err != nil {
 		return false, err
@@ -274,7 +274,7 @@ func (self Binop) compareLEOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) equalOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) equalOp(intp *Interpreter) (any, error) {
 	r, err := self.compareValues(intp)
 	if err != nil {
 		return false, err
@@ -283,7 +283,7 @@ func (self Binop) equalOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) notEqalOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) notEqalOp(intp *Interpreter) (any, error) {
 	r, err := self.compareValues(intp)
 	if err != nil {
 		var evalError *EvalError
@@ -297,15 +297,15 @@ func (self Binop) notEqalOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) modOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) modOp(intp *Interpreter) (any, error) {
 	return self.numberOp(
 		intp,
-		func(a, b *Number) interface{} { return a.IntMod(b) },
+		func(a, b *Number) any { return a.IntMod(b) },
 		"%")
 }
 
 // circuit break operators
-func (self Binop) andOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) andOp(intp *Interpreter) (any, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -322,7 +322,7 @@ func (self Binop) andOp(intp *Interpreter) (interface{}, error) {
 	return rightBool, nil
 }
 
-func (self Binop) orOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) orOp(intp *Interpreter) (any, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -339,7 +339,7 @@ func (self Binop) orOp(intp *Interpreter) (interface{}, error) {
 	return rightBool, nil
 }
 
-func (self Binop) indexAtOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) indexAtOp(intp *Interpreter) (any, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -349,13 +349,13 @@ func (self Binop) indexAtOp(intp *Interpreter) (interface{}, error) {
 		return nil, err
 	}
 	switch v := leftVal.(type) {
-	case []interface{}:
+	case []any:
 		if nRight, ok := rightVal.(*Number); ok {
 			return v[nRight.Int64()], nil
 		} else {
 			return nil, NewEvalError(-3200, "non int index")
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		if strRight, ok := rightVal.(string); ok {
 			if elem, ok := v[strRight]; ok {
 				return elem, nil
@@ -370,7 +370,7 @@ func (self Binop) indexAtOp(intp *Interpreter) (interface{}, error) {
 	}
 }
 
-func (self Binop) inOp(intp *Interpreter) (interface{}, error) {
+func (self Binop) inOp(intp *Interpreter) (any, error) {
 	leftVal, err := self.Left.Eval(intp)
 	if err != nil {
 		return nil, err
@@ -382,7 +382,7 @@ func (self Binop) inOp(intp *Interpreter) (interface{}, error) {
 	switch rv := rightVal.(type) {
 	case *RangeValue:
 		return rv.Contains(leftVal), nil
-	case []interface{}:
+	case []any:
 		for _, kv := range rv {
 			if cmp.Equal(leftVal, kv) {
 				return true, nil

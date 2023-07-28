@@ -10,7 +10,7 @@ import (
 
 type evalPair struct {
 	input  string
-	expect interface{}
+	expect any
 }
 
 func TestEvalPairs(t *testing.T) {
@@ -26,7 +26,7 @@ func TestEvalPairs(t *testing.T) {
 		{"false", false},
 		{`"hello" + " world"`, "hello world"},
 
-		{`{a if c: "hello", b: "world"}`, map[string]interface{}{"a if c": "hello", "b": "world"}},
+		{`{a if c: "hello", b: "world"}`, map[string]any{"a if c": "hello", "b": "world"}},
 
 		// in range and array
 		{`5 in (5..8]`, false},
@@ -50,7 +50,7 @@ func TestEvalPairs(t *testing.T) {
 
 		// loop functions
 		{`some x in [3, 4, 5] satisfies x >= 4`, ParseNumber(4)},
-		{`every y in [3, 4, 5] satisfies y >= 4`, []interface{}{ParseNumber(4), ParseNumber(5)}},
+		{`every y in [3, 4, 5] satisfies y >= 4`, []any{ParseNumber(4), ParseNumber(5)}},
 
 		// null check
 		{`a != null and a.b > 10`, false},
@@ -77,19 +77,19 @@ func TestEvalPairs(t *testing.T) {
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
 		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},
 
-		{`append(["hello"], " ", "world")`, []interface{}{"hello", " ", "world"}},
-		{`concatenate([2, 1], [3])`, []interface{}{ParseNumber(2), ParseNumber(1), ParseNumber(3)}},
-		{`insert before(["hello", "world"], 1, "another")`, []interface{}{"hello", "another", "world"}},
-		{`remove(["hello", "a", "world"], 1)`, []interface{}{"hello", "world"}},
+		{`append(["hello"], " ", "world")`, []any{"hello", " ", "world"}},
+		{`concatenate([2, 1], [3])`, []any{ParseNumber(2), ParseNumber(1), ParseNumber(3)}},
+		{`insert before(["hello", "world"], 1, "another")`, []any{"hello", "another", "world"}},
+		{`remove(["hello", "a", "world"], 1)`, []any{"hello", "world"}},
 
 		{`index of([1,2,3,2],2)`, []any{ParseNumber(1), ParseNumber(3)}},
 
-		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []interface{}{ParseNumber(1), ParseNumber(2), ParseNumber(3)}},
-		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []interface{}{"a", "b", "c", "d"}},
-		{`union(["a", "b"], ["b", "c"], ["d"])`, []interface{}{"a", "b", "c", "d"}},
+		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []any{ParseNumber(1), ParseNumber(2), ParseNumber(3)}},
+		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []any{"a", "b", "c", "d"}},
+		{`union(["a", "b"], ["b", "c"], ["d"])`, []any{"a", "b", "c", "d"}},
 
-		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []interface{}{"a", "hello", "world"}},
-		{`sort([8, -1, 3], function(x, y) x > y)`, []interface{}{ParseNumber(8), ParseNumber(3), ParseNumber(-1)}},
+		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []any{"a", "hello", "world"}},
+		{`sort([8, -1, 3], function(x, y) x > y)`, []any{ParseNumber(8), ParseNumber(3), ParseNumber(-1)}},
 
 		{`string join(["hello", "world"])`, "helloworld"},
 		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]"},
