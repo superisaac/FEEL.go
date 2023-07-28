@@ -73,16 +73,16 @@ func TestEvalPairs(t *testing.T) {
 		{`bind("x", 666); is defined(x)`, true},        // `x` is bound
 		{`bind("x", 888); is defined(value: x)`, true}, // macro can use keyword arguments
 
-		{`substring(string: "abcdef", start position: 2, length: 3)`, "cde"},
+		{`substring(string: "abcdef", start position: 3, length: 3)`, "cde"},
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
 		{`median([3, 5, 9, 1, "hello", -2])`, ParseNumber(3)},
 
 		{`append(["hello"], " ", "world")`, []any{"hello", " ", "world"}},
 		{`concatenate([2, 1], [3])`, []any{ParseNumber(2), ParseNumber(1), ParseNumber(3)}},
-		{`insert before(["hello", "world"], 1, "another")`, []any{"hello", "another", "world"}},
-		{`remove(["hello", "a", "world"], 1)`, []any{"hello", "world"}},
+		{`insert before(["hello", "world"], 2, "another")`, []any{"hello", "another", "world"}},
+		{`remove(["hello", "a", "world"], 2)`, []any{"hello", "world"}},
 
-		{`index of([1,2,3,2],2)`, []any{ParseNumber(1), ParseNumber(3)}},
+		{`index of([1,2,3,2],2)`, []any{ParseNumber(2), ParseNumber(4)}},
 
 		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []any{ParseNumber(1), ParseNumber(2), ParseNumber(3)}},
 		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []any{"a", "b", "c", "d"}},

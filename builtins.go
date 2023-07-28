@@ -9,6 +9,14 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+func toFEELIndex(idx int) int {
+	return idx + 1
+}
+
+func fromFEELIndex(idx int) int {
+	return idx - 1
+}
+
 func decodeKWArgs(input map[string]any, output any) error {
 	config := &mapstructure.DecoderConfig{
 		Metadata: nil,
@@ -80,7 +88,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if err := decodeKWArgs(kwargs, &args); err != nil {
 			return nil, err
 		}
-		startPos := int(args.StartPos.Int64())
+		startPos := fromFEELIndex(args.StartPos.Int())
 		if startPos >= len(args.Str) {
 			return "", nil
 		}
@@ -310,7 +318,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if err := decodeKWArgs(kwargs, &args); err != nil {
 			return nil, err
 		}
-		startPos := int(args.StartPos.Int64())
+		startPos := fromFEELIndex(args.StartPos.Int())
 		if startPos >= len(args.List) {
 			return "", nil
 		}
@@ -354,7 +362,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 
 	prelude.Bind("insert before", wrapTyped(func(list []any, pos *Number, newItem any) ([]any, error) {
 		// The position starts at the index 1. The last position is -1
-		position := pos.Int()
+		position := fromFEELIndex(pos.Int())
 		if position > len(list) {
 			position = len(list)
 		}
@@ -370,7 +378,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 
 	prelude.Bind("remove", wrapTyped(func(list []any, pos *Number) ([]any, error) {
 		// The position starts at the index 1. The last position is -1
-		position := pos.Int()
+		position := fromFEELIndex(pos.Int())
 		if position > len(list) {
 			position = len(list)
 		}
@@ -394,7 +402,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		matched := make([]any, 0)
 		for i, elem := range list {
 			if cmp, err := compareInterfaces(elem, match); err == nil && cmp == 0 {
-				matched = append(matched, ParseNumber(i))
+				matched = append(matched, ParseNumber(toFEELIndex(i)))
 			}
 		}
 		return matched, nil
