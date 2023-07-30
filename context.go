@@ -1,6 +1,6 @@
 package feel
 
-func contextGetByKeys(ctx map[string]interface{}, keys []string) (interface{}, bool) {
+func contextGetByKeys(ctx map[string]any, keys []string) (any, bool) {
 	for i, key := range keys {
 		if i == len(keys)-1 {
 			v, ok := ctx[key]
@@ -10,7 +10,7 @@ func contextGetByKeys(ctx map[string]interface{}, keys []string) (interface{}, b
 			if !ok {
 				return nil, false
 			}
-			if subctx, ok := v.(map[string]interface{}); ok {
+			if subctx, ok := v.(map[string]any); ok {
 				ctx = subctx
 			} else {
 				return nil, false
@@ -20,7 +20,7 @@ func contextGetByKeys(ctx map[string]interface{}, keys []string) (interface{}, b
 	return nil, false
 }
 
-func contextProbePut(ctx map[string]interface{}, keys []string) bool {
+func contextProbePut(ctx map[string]any, keys []string) bool {
 	for i, key := range keys {
 		if i == len(keys)-1 {
 			return true
@@ -30,7 +30,7 @@ func contextProbePut(ctx map[string]interface{}, keys []string) bool {
 				// empty cell can be put
 				return true
 			}
-			if subctx, ok := v.(map[string]interface{}); ok {
+			if subctx, ok := v.(map[string]any); ok {
 				ctx = subctx
 			} else {
 				// sub ctx is not map
@@ -41,15 +41,15 @@ func contextProbePut(ctx map[string]interface{}, keys []string) bool {
 	return false
 }
 
-func contextCopy(ctx map[string]interface{}) map[string]interface{} {
-	newCtx := make(map[string]interface{})
+func contextCopy(ctx map[string]any) map[string]any {
+	newCtx := make(map[string]any)
 	for k, v := range ctx {
 		newCtx[k] = v
 	}
 	return newCtx
 }
 
-func contextPutKeys(ctx map[string]interface{}, keys []string, value interface{}) (map[string]interface{}, bool) {
+func contextPutKeys(ctx map[string]any, keys []string, value any) (map[string]any, bool) {
 	if !contextProbePut(ctx, keys) {
 		// cannot put keys
 		return ctx, false
@@ -63,13 +63,13 @@ func contextPutKeys(ctx map[string]interface{}, keys []string, value interface{}
 			return rootCtx, true
 		} else {
 			if v, ok := ctx[key]; ok {
-				if subctx, ok := v.(map[string]interface{}); ok {
+				if subctx, ok := v.(map[string]any); ok {
 					ctx = subctx
 				} else {
 					return rootCtx, false
 				}
 			} else {
-				subctx := make(map[string]interface{})
+				subctx := make(map[string]any)
 				ctx[key] = subctx
 				ctx = subctx
 			}
@@ -80,15 +80,15 @@ func contextPutKeys(ctx map[string]interface{}, keys []string, value interface{}
 
 func installContextFunctions(prelude *Prelude) {
 	// context/map functions
-	prelude.Bind("get value", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+	prelude.Bind("get value", NewNativeFunc(func(kwargs map[string]any) (any, error) {
 		type getvalueByKey struct {
-			Context map[string]interface{} `json:"context"`
-			Key     string                 `json:"key"`
+			Context map[string]any `json:"context"`
+			Key     string         `json:"key"`
 		}
 
 		type getvalueByKeys struct {
-			Context map[string]interface{} `json:"context"`
-			Keys    []string               `json:"key"`
+			Context map[string]any `json:"context"`
+			Keys    []string       `json:"key"`
 		}
 
 		argsByKey := getvalueByKey{}
@@ -113,10 +113,10 @@ func installContextFunctions(prelude *Prelude) {
 		}
 	}).Required("context", "key"))
 
-	prelude.Bind("get entries", wrapTyped(func(ctx map[string]interface{}) ([](map[string]interface{}), error) {
-		entries := make([](map[string]interface{}), 0)
+	prelude.Bind("get entries", wrapTyped(func(ctx map[string]any) ([](map[string]any), error) {
+		entries := make([](map[string]any), 0)
 		for k, v := range ctx {
-			ent := map[string]interface{}{
+			ent := map[string]any{
 				"key":   k,
 				"value": v,
 			}
@@ -125,17 +125,17 @@ func installContextFunctions(prelude *Prelude) {
 		return entries, nil
 	}).Required("context"))
 
-	prelude.Bind("context put", NewNativeFunc(func(kwargs map[string]interface{}) (interface{}, error) {
+	prelude.Bind("context put", NewNativeFunc(func(kwargs map[string]any) (any, error) {
 		type putByKey struct {
-			Context map[string]interface{} `json:"context"`
-			Key     string                 `json:"key"`
-			Value   interface{}            `json:"value"`
+			Context map[string]any `json:"context"`
+			Key     string         `json:"key"`
+			Value   any            `json:"value"`
 		}
 
 		type putByKeys struct {
-			Context map[string]interface{} `json:"context"`
-			Keys    []string               `json:"key"`
-			Value   interface{}            `json:"value"`
+			Context map[string]any `json:"context"`
+			Keys    []string       `json:"key"`
+			Value   any            `json:"value"`
 		}
 
 		argsByKey := putByKey{}
@@ -152,5 +152,15 @@ func installContextFunctions(prelude *Prelude) {
 			return ctx, nil
 		}
 	}).Required("context", "key", "value"))
+
+	prelude.Bind("context merge", wrapTyped(func(contexts []map[string]any) (map[string]any, error) {
+		merged := make(map[string]any)
+		for _, ctx := range contexts {
+			for k, v := range ctx {
+				merged[k] = v
+			}
+		}
+		return merged, nil
+	}).Required("contextx"))
 
 }

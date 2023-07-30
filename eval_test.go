@@ -75,6 +75,8 @@ func TestEvalPairs(t *testing.T) {
 
 		{`substring(string: "abcdef", start position: 3, length: 3)`, "cde"},
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
+
+		// list functions
 		{`median([3, 5, 9, 1, "hello", -2])`, N(3)},
 
 		{`append(["hello"], " ", "world")`, []any{"hello", " ", "world"}},
@@ -94,12 +96,14 @@ func TestEvalPairs(t *testing.T) {
 		{`string join(["hello", "world"])`, "helloworld"},
 		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]"},
 
+		// context/map functions
 		{`get value({a: 2}, "b")`, Null},
 		{`get value({a: 2}, "a")`, N(2)},
 		{`get value({a: {b: {c: 4}}}, ["a", "b", "c"])`, N(4)},
 		{`get value({a: {b: {c: 4}}}, ["a", "b"])`, map[string]any{"c": N(4)}},
 		{`get value({a: {b: {c: 4}}}, ["a", "k"])`, Null},
 		{`get value(context put({a: false}, ["b", "c", "d"], 4), ["b", "c"])`, map[string]any{"d": N(4)}},
+		{`context merge([{x:1, y: 0}, {y:2}])`, map[string]any{"x": N(1), "y": N(2)}},
 	}
 
 	for _, p := range evalPairs {
