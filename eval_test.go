@@ -99,6 +99,7 @@ func TestEvalPairs(t *testing.T) {
 		{`get value({a: {b: {c: 4}}}, ["a", "b", "c"])`, N(4)},
 		{`get value({a: {b: {c: 4}}}, ["a", "b"])`, map[string]any{"c": N(4)}},
 		{`get value({a: {b: {c: 4}}}, ["a", "k"])`, Null},
+		{`get value(context put({a: false}, ["b", "c", "d"], 4), ["b", "c"])`, map[string]any{"d": N(4)}},
 	}
 
 	for _, p := range evalPairs {

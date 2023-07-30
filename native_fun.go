@@ -142,6 +142,7 @@ func (self *Prelude) Load() {
 
 	installDatetimeFunctions(self)
 	installBuiltinFunctions(self)
+	installContextFunctions(self)
 }
 
 func (self *Prelude) Bind(name string, value interface{}) *Prelude {
