@@ -187,6 +187,10 @@ func TestEvalPairs(t *testing.T) {
 		{`started by([1..10], [1..5])`, true},
 		{`started by((1..10], [1..5))`, false},
 		{`started by([1..10], [1..10))`, true},
+
+		{`coincides([1..5], [1..5])`, true},
+		{`coincides((1..5], [1..5))`, false},
+		{`coincides([1..5], [2..6])`, false},
 	}
 
 	for _, p := range evalPairs {

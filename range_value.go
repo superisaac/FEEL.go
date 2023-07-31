@@ -350,4 +350,39 @@ func installRangeFunctions(prelude *Prelude) {
 		}
 	}).Required("a", "b"))
 
+	prelude.Bind("coincides", NewNativeFunc(func(kwargs map[string]any) (any, error) {
+		type coincidesArgs struct {
+			A *RangeValue `json:"a"`
+			B *RangeValue `json:"b"`
+		}
+		args := coincidesArgs{}
+		if err := decodeKWArgs(kwargs, &args); err != nil {
+			// a, b is not rangevalue
+			r, err := compareInterfaces(kwargs["a"], kwargs["b"])
+			if err != nil {
+				return nil, err
+			}
+			return r == 0, nil
+		} else {
+			a := args.A
+			b := args.B
+			if a.StartOpen != b.StartOpen {
+				return false, nil
+			}
+			if a.EndOpen != b.EndOpen {
+				return false, nil
+			}
+			cmpStart, err := compareInterfaces(a.Start, b.Start)
+			if err != nil {
+				return nil, err
+			}
+			cmpEnd, err := compareInterfaces(a.End, b.End)
+			if err != nil {
+				return nil, err
+			}
+			return cmpStart == 0 && cmpEnd == 0, nil
+		}
+
+	}).Required("a", "b"))
+
 }
