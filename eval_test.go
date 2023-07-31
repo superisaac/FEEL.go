@@ -132,6 +132,37 @@ func TestEvalPairs(t *testing.T) {
 		{`met by([3..5], [1..3])`, true},
 		{`met by((5..8], [1..5))`, false},
 		{`met by([5..10], [1..5))`, false},
+
+		{`overlaps([5..10], [1..6])`, true},
+		{`overlaps((3..7], [1..4])`, true},
+		{`overlaps([1..3], (3..6])`, false},
+		{`overlaps((5..8], [1..5))`, false},
+		{`overlaps([4..10], [1..5))`, true},
+
+		{`overlaps before([1..5], [4..10])`, true},
+		{`overlaps before([3..4], [1..2])`, false},
+		{`overlaps before([1..3], (3..5])`, false},
+		{`overlaps before([1..5), (3..8])`, true},
+		{`overlaps before([1..5), [5..10])`, false},
+
+		{`overlaps after([4..10], [1..5])`, true},
+		{`overlaps after([3..4], [1..2])`, false},
+		{`overlaps after([3..5], [1..3))`, false},
+		{`overlaps after((5..8], [1..5))`, false},
+		{`overlaps after([4..10], [1..5))`, true},
+
+		{`finishes(5, [1..5])`, true},
+		{`finishes(10, [1..7])`, false},
+		{`finishes([3..5], [1..5])`, true},
+		{`finishes((1..5], [1..5))`, false},
+		{`finishes([5..10], [1..10))`, false},
+
+		{`finished by([5..10], 10)`, true},
+		{`finished by([3..4], 2)`, false},
+
+		{`finished by([3..5], [1..5])`, true},
+		{`finished by((5..8], [1..5))`, false},
+		{`finished by([5..10], (1..10))`, true},
 	}
 
 	for _, p := range evalPairs {

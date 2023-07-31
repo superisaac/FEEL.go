@@ -65,6 +65,15 @@ func (self Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (any, e
 	return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad type in op, %T %s %T", leftVal, op, rightVal))
 }
 
+func CompareValues(leftVal, rightVal any) int {
+	r, err := compareInterfaces(leftVal, rightVal)
+	if err != nil {
+		panic(err)
+	} else {
+		return r
+	}
+}
+
 func compareInterfaces(leftVal, rightVal any) (int, error) {
 	switch v := leftVal.(type) {
 	case string:

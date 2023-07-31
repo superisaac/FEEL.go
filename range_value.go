@@ -1,7 +1,7 @@
 package feel
 
 import (
-//"fmt"
+// "fmt"
 )
 
 type RangeValue struct {
@@ -93,6 +93,34 @@ func (self RangeValue) Contains(p any) bool {
 	return r == 0
 }
 
+func (self RangeValue) overlapsBefore(other RangeValue) (bool, error) {
+	pos, err := other.Position(self.End)
+	if err != nil {
+		return false, err
+	}
+	if pos != 0 {
+		return false, nil
+	} else if self.EndOpen && CompareValues(self.End, other.Start) == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
+func (self RangeValue) overlapsAfter(other RangeValue) (bool, error) {
+	pos, err := other.Position(self.Start)
+	if err != nil {
+		return false, err
+	}
+	if pos != 0 {
+		return false, nil
+	} else if self.EndOpen && CompareValues(self.Start, other.End) == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
 func installRangeFunctions(prelude *Prelude) {
 	prelude.Bind("before", NewNativeFunc(func(kwargs map[string]any) (any, error) {
 		a := kwargs["a"]
@@ -161,4 +189,63 @@ func installRangeFunctions(prelude *Prelude) {
 		}
 		return !b.EndOpen && !a.StartOpen && r == 0, nil
 	}).Required("a", "b"))
+
+	prelude.Bind("overlaps", wrapTyped(func(a *RangeValue, b *RangeValue) (bool, error) {
+		obefore, err := a.overlapsBefore(*b)
+		if err != nil {
+			return false, err
+		} else if obefore {
+			return true, nil
+		}
+		oafter, err := a.overlapsAfter(*b)
+		if err != nil {
+			return false, err
+		} else if oafter {
+			return true, nil
+		}
+		return false, nil
+	}).Required("a", "b"))
+
+	prelude.Bind("overlaps before", wrapTyped(func(a *RangeValue, b *RangeValue) (bool, error) {
+		return a.overlapsBefore(*b)
+	}).Required("a", "b"))
+
+	prelude.Bind("overlaps after", wrapTyped(func(a *RangeValue, b *RangeValue) (bool, error) {
+		return a.overlapsAfter(*b)
+	}).Required("a", "b"))
+
+	prelude.Bind("finishes", wrapTyped(func(a any, b *RangeValue) (bool, error) {
+		switch va := a.(type) {
+		case *RangeValue:
+			r, err := compareInterfaces(va.End, b.End)
+			if err != nil {
+				return false, err
+			}
+			return r == 0 && !b.EndOpen, nil
+		default:
+			r, err := compareInterfaces(a, b.End)
+			if err != nil {
+				return false, err
+			}
+			return r == 0 && !b.EndOpen, nil
+		}
+	}).Required("a", "b"))
+
+	prelude.Bind("finished by", wrapTyped(func(a *RangeValue, b any) (bool, error) {
+		switch vb := b.(type) {
+		case *RangeValue:
+			r, err := compareInterfaces(vb.End, a.End)
+			if err != nil {
+				return false, err
+			}
+			return r == 0 && !a.EndOpen, nil
+		default:
+			r, err := compareInterfaces(b, a.End)
+			if err != nil {
+				return false, err
+			}
+			return r == 0 && !a.EndOpen, nil
+		}
+	}).Required("a", "b"))
+
 }
