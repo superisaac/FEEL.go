@@ -1,5 +1,9 @@
 package feel
 
+import (
+//"fmt"
+)
+
 type RangeValue struct {
 	StartOpen bool
 	Start     any
@@ -8,28 +12,21 @@ type RangeValue struct {
 	End     any
 }
 
-func (self RangeValue) BeforePoint(v any) (bool, error) {
-	r, err := compareInterfaces(self.End, v)
+func (self RangeValue) BeforePoint(p any) (bool, error) {
+	pos, err := self.Position(p)
 	if err != nil {
 		return false, err
 	}
-	if self.EndOpen {
-		return r >= 0, nil
-	} else {
-		return r > 0, nil
-	}
+	return pos > 0, nil
+
 }
 
-func (self RangeValue) AfterPoint(v any) (bool, error) {
-	r, err := compareInterfaces(v, self.Start)
+func (self RangeValue) AfterPoint(p any) (bool, error) {
+	pos, err := self.Position(p)
 	if err != nil {
 		return false, err
 	}
-	if self.StartOpen {
-		return r <= 0, nil
-	} else {
-		return r < 0, nil
-	}
+	return pos < 0, nil
 }
 
 func (self RangeValue) BeforeRange(other RangeValue) (bool, error) {
@@ -37,10 +34,12 @@ func (self RangeValue) BeforeRange(other RangeValue) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if other.StartOpen {
-		return r <= 0, nil
-	} else {
+
+	if !self.EndOpen && !other.StartOpen {
+		// two ranges meet
 		return r < 0, nil
+	} else {
+		return r <= 0, nil
 	}
 }
 
@@ -49,59 +48,49 @@ func (self RangeValue) AfterRange(other RangeValue) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if other.EndOpen {
-		return r <= 0, nil
+	if !self.StartOpen && !other.EndOpen {
+		return r > 0, nil
 	} else {
-		return r < 0, nil
+		return r >= 0, nil
 	}
 }
 
-func (self RangeValue) Contains(v any) bool {
-	switch vv := v.(type) {
-	case string:
-		strStart, ok := self.Start.(string)
-		if !ok {
-			return false
-		}
-		strEnd, ok := self.End.(string)
-		if !ok {
-			return false
-		}
-		var startContains = strStart <= vv
-		if self.StartOpen {
-			startContains = strStart < vv
-		}
-
-		var endContains = vv <= strEnd
-		if self.EndOpen {
-			startContains = vv < strEnd
-		}
-
-		return startContains && endContains
-	case *Number:
-		nStart, ok := self.Start.(*Number)
-		if !ok {
-			return false
-		}
-		nEnd, ok := self.End.(*Number)
-		if !ok {
-			return false
-		}
-		cmpStart := nStart.Cmp(vv)
-		cmpEnd := vv.Cmp(nEnd)
-
-		var startContains = cmpStart <= 0
-		if self.StartOpen {
-			startContains = cmpStart < 0
-		}
-
-		var endContains = cmpEnd <= 0
-		if self.EndOpen {
-			startContains = cmpEnd < 0
-		}
-		return startContains && endContains
+func (self RangeValue) Position(p any) (int, error) {
+	cmpStart, err := compareInterfaces(p, self.Start)
+	if err != nil {
+		return 0, err
 	}
-	return false
+	if self.StartOpen {
+		if cmpStart <= 0 {
+			return -1, nil
+		}
+	} else {
+		if cmpStart == 0 {
+			return 0, nil
+		} else if cmpStart < 0 {
+			return -1, nil
+		}
+	}
+
+	cmpEnd, err := compareInterfaces(p, self.End)
+	if err != nil {
+		return 0, err
+	}
+	if self.EndOpen && cmpEnd >= 0 {
+		return 1, nil
+	} else if !self.EndOpen && cmpEnd > 0 {
+		return 1, nil
+	}
+	return 0, nil
+
+}
+
+func (self RangeValue) Contains(p any) bool {
+	r, err := self.Position(p)
+	if err != nil {
+		panic(err)
+	}
+	return r == 0
 }
 
 func installRangeFunctions(prelude *Prelude) {
@@ -155,5 +144,21 @@ func installRangeFunctions(prelude *Prelude) {
 				}
 			}
 		}
+	}).Required("a", "b"))
+
+	prelude.Bind("meets", wrapTyped(func(a *RangeValue, b *RangeValue) (bool, error) {
+		r, err := compareInterfaces(a.End, b.Start)
+		if err != nil {
+			return false, err
+		}
+		return !a.EndOpen && !b.StartOpen && r == 0, nil
+	}).Required("a", "b"))
+
+	prelude.Bind("met by", wrapTyped(func(a *RangeValue, b *RangeValue) (bool, error) {
+		r, err := compareInterfaces(a.Start, b.End)
+		if err != nil {
+			return false, err
+		}
+		return !b.EndOpen && !a.StartOpen && r == 0, nil
 	}).Required("a", "b"))
 }

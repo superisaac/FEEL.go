@@ -104,6 +104,34 @@ func TestEvalPairs(t *testing.T) {
 		{`get value({a: {b: {c: 4}}}, ["a", "k"])`, Null},
 		{`get value(context put({a: false}, ["b", "c", "d"], 4), ["b", "c"])`, map[string]any{"d": N(4)}},
 		{`context merge([{x:1, y: 0}, {y:2}])`, map[string]any{"x": N(1), "y": N(2)}},
+
+		// range functions
+		{`before(1, 10)`, true},
+		{`before(10, 1)`, false},
+		{`before([1..5], 10)`, true},
+		{`before(1, [2..5])`, true},
+		{`before(3, [2..5])`, false},
+
+		{`before([1..5),[5..10])`, true},
+		{`before([1..5),(5..10])`, true},
+		{`before([1..5],[5..10])`, false},
+		{`before([1..5),(5..10])`, true},
+
+		{`after([5..10], [1..5))`, true},
+		{`after((5..10], [1..5))`, true},
+		{`after([5..10], [1..5])`, false},
+		{`after((5..10], [1..5))`, true},
+
+		{`meets([1..5], [5..10])`, true},
+		{`meets([1..3], [4..6])`, false},
+		{`meets([1..3], [3..5])`, true},
+		{`meets([1..5], (5..8])`, false},
+
+		{`met by([5..10], [1..5])`, true},
+		{`met by([3..4], [1..2])`, false},
+		{`met by([3..5], [1..3])`, true},
+		{`met by((5..8], [1..5))`, false},
+		{`met by([5..10], [1..5))`, false},
 	}
 
 	for _, p := range evalPairs {
