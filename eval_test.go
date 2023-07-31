@@ -163,6 +163,30 @@ func TestEvalPairs(t *testing.T) {
 		{`finished by([3..5], [1..5])`, true},
 		{`finished by((5..8], [1..5))`, false},
 		{`finished by([5..10], (1..10))`, true},
+
+		{`includes([5..10], 6)`, true},
+		{`includes([3..4], 5)`, false},
+		{`includes([1..10], [4..6])`, true},
+		{`includes((5..8], [1..5))`, false},
+		{`includes([1..10], [1..5))`, true},
+
+		{`during(5, [1..10])`, true},
+		{`during(12, [1..10])`, false},
+		{`during(1, (1..10])`, false},
+		{`during([4..6], [1..10))`, true},
+		{`during((1..5], (1..10])`, true},
+
+		{`starts(1, [1..5])`, true},
+		{`starts(1, (1..8])`, false},
+		{`starts((1..5], [1..5])`, false},
+		{`starts([1..10], [1..10])`, true},
+		{`starts((1..10), (1..10))`, true},
+
+		{`started by([1..10], 1)`, true},
+		{`started by((1..10], 1)`, false},
+		{`started by([1..10], [1..5])`, true},
+		{`started by((1..10], [1..5))`, false},
+		{`started by([1..10], [1..10))`, true},
 	}
 
 	for _, p := range evalPairs {

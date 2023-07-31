@@ -85,6 +85,29 @@ func (self RangeValue) Position(p any) (int, error) {
 
 }
 
+func (self RangeValue) Includes(other RangeValue) (bool, error) {
+	cmpStart, err := compareInterfaces(self.Start, other.Start)
+	if err != nil {
+		return false, err
+	}
+	cmpEnd, err := compareInterfaces(self.End, other.End)
+	if err != nil {
+		return false, err
+	}
+	if cmpStart > 0 || cmpEnd < 0 {
+		return false, nil
+	}
+
+	if !(cmpStart < 0 || !self.StartOpen || other.StartOpen) {
+		return false, nil
+	}
+
+	if !(cmpEnd > 0 || !self.EndOpen || other.EndOpen) {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (self RangeValue) Contains(p any) bool {
 	r, err := self.Position(p)
 	if err != nil {
@@ -231,6 +254,32 @@ func installRangeFunctions(prelude *Prelude) {
 		}
 	}).Required("a", "b"))
 
+	prelude.Bind("starts", wrapTyped(func(a any, b *RangeValue) (bool, error) {
+		switch va := a.(type) {
+		case *RangeValue:
+			r, err := compareInterfaces(va.Start, b.Start)
+			if err != nil {
+				return false, err
+			}
+			if r != 0 {
+				return false, nil
+			}
+			if va.StartOpen && !b.StartOpen {
+				return false, nil
+			}
+			if !va.StartOpen && b.StartOpen {
+				return false, nil
+			}
+			return true, nil
+		default:
+			r, err := compareInterfaces(a, b.Start)
+			if err != nil {
+				return false, err
+			}
+			return r == 0 && !b.StartOpen, nil
+		}
+	}).Required("a", "b"))
+
 	prelude.Bind("finished by", wrapTyped(func(a *RangeValue, b any) (bool, error) {
 		switch vb := b.(type) {
 		case *RangeValue:
@@ -238,6 +287,7 @@ func installRangeFunctions(prelude *Prelude) {
 			if err != nil {
 				return false, err
 			}
+
 			return r == 0 && !a.EndOpen, nil
 		default:
 			r, err := compareInterfaces(b, a.End)
@@ -245,6 +295,58 @@ func installRangeFunctions(prelude *Prelude) {
 				return false, err
 			}
 			return r == 0 && !a.EndOpen, nil
+		}
+	}).Required("a", "b"))
+
+	prelude.Bind("started by", wrapTyped(func(a *RangeValue, b any) (bool, error) {
+		switch vb := b.(type) {
+		case *RangeValue:
+			r, err := compareInterfaces(vb.Start, a.Start)
+			if err != nil {
+				return false, err
+			}
+			if r != 0 {
+				return false, nil
+			}
+			if vb.StartOpen && !a.StartOpen {
+				return false, nil
+			}
+			if !vb.StartOpen && a.StartOpen {
+				return false, nil
+			}
+			return true, nil
+		default:
+			r, err := compareInterfaces(b, a.Start)
+			if err != nil {
+				return false, err
+			}
+			return r == 0 && !a.StartOpen, nil
+		}
+	}).Required("a", "b"))
+
+	prelude.Bind("includes", wrapTyped(func(a *RangeValue, b any) (bool, error) {
+		switch vb := b.(type) {
+		case *RangeValue:
+			return a.Includes(*vb)
+		default:
+			r, err := a.Position(vb)
+			if err != nil {
+				return false, err
+			}
+			return r == 0, nil
+		}
+	}).Required("a", "b"))
+
+	prelude.Bind("during", wrapTyped(func(a any, b *RangeValue) (bool, error) {
+		switch va := a.(type) {
+		case *RangeValue:
+			return b.Includes(*va)
+		default:
+			r, err := b.Position(va)
+			if err != nil {
+				return false, err
+			}
+			return r == 0, nil
 		}
 	}).Required("a", "b"))
 
