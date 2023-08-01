@@ -3,19 +3,7 @@ package feel
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
 )
-
-type EvalError struct {
-	Code    int
-	Short   string
-	Message string
-}
-
-func (self EvalError) Error() string {
-	return fmt.Sprintf("%d %s %s", self.Code, self.Short, self.Message)
-}
 
 // values
 
@@ -48,6 +36,39 @@ func boolValue(condVal any) bool {
 		return v != nil && len(v) > 0
 	default:
 		return v != nil
+	}
+}
+
+func typeName(a any) string {
+	switch a.(type) {
+	case int64:
+		return "number"
+	case float64:
+		return "number"
+	case *Number:
+		return "number"
+	case bool:
+		return "bool"
+	case string:
+		return "string"
+	case []any:
+		return "list"
+	case map[string]any:
+		return "context"
+	case *NullValue:
+		return "null"
+	case *FEELDate:
+		return "date"
+	case *FEELTime:
+		return "time"
+	case *FEELDatetime:
+		return "datetime"
+	case *FEELDuration:
+		return "duration"
+	case *RangeValue:
+		return "range"
+	default:
+		return "unknown"
 	}
 }
 
@@ -126,15 +147,6 @@ func (self *Interpreter) Bind(name string, value any) {
 	}
 }
 
-func NewEvalError(code int, short string, msgs ...string) *EvalError {
-	message := strings.Join(msgs, " ")
-	return &EvalError{
-		Code:    code,
-		Short:   short,
-		Message: message,
-	}
-}
-
 // AST's eval functions
 func (self NumberNode) Eval(intp *Interpreter) (any, error) {
 	return NewNumber(self.Value), nil
@@ -160,7 +172,7 @@ func (self Var) Eval(intp *Interpreter) (any, error) {
 	if v, ok := intp.Resolve(self.Name); ok {
 		return v, nil
 	} else {
-		//return nil, NewEvalError(-1000, "fail to resolve name", fmt.Sprintf("fail to resolve name %s", self.Name))
+		//return nil, NewErrKeyNotFound(self.Name)
 		return Null, nil
 	}
 }
@@ -241,17 +253,19 @@ func (self DotOp) Eval(intp *Interpreter) (any, error) {
 		if val, found := mapVal[self.Attr]; found {
 			return val, nil
 		} else {
-			return nil, NewEvalError(-4000, "map key error", fmt.Sprintf("cannot find map attribute %s", self.Attr))
+			return nil, NewErrKeyNotFound(self.Attr)
 		}
 	} else if obj, ok := leftVal.(HasAttrs); ok {
-		if v, ok := obj.GetAttr(self.Attr); ok {
+		if v, found := obj.GetAttr(self.Attr); found {
 			return normalizeValue(v), nil
 		} else {
-			return nil, NewEvalError(-4001, "attr error", fmt.Sprintf("cannot get attr %s", self.Attr))
+			//return nil, NewEvalError(-4001, "attr error", fmt.Sprintf("cannot get attr %s", self.Attr))
+			return nil, NewErrKeyNotFound(self.Attr)
+
 		}
 	} else {
-		//return nil, NewEvalError(-4001, "type mismatch", "is not map")
-		return Null, nil
+		return nil, NewErrTypeMismatch("map")
+		//return Null, nil
 	}
 }
 
@@ -298,7 +312,7 @@ func (self ForExpr) Eval(intp *Interpreter) (any, error) {
 		intp.Pop()
 		return results, nil
 	} else {
-		return nil, NewEvalError(-6000, "not a list")
+		return nil, NewErrTypeMismatch("list")
 	}
 }
 
@@ -325,7 +339,7 @@ func (self SomeExpr) Eval(intp *Interpreter) (any, error) {
 		intp.Pop()
 		return nil, nil
 	} else {
-		return nil, NewEvalError(-6000, "not a list")
+		return nil, NewErrTypeMismatch("list")
 	}
 }
 
@@ -354,7 +368,7 @@ func (self EveryExpr) Eval(intp *Interpreter) (any, error) {
 		intp.Pop()
 		return chooses, nil
 	} else {
-		return nil, NewEvalError(-6000, "not a list")
+		return nil, NewErrTypeMismatch("list")
 	}
 }
 
@@ -390,7 +404,7 @@ func (self FunCall) Eval(intp *Interpreter) (any, error) {
 	case *Macro:
 		return self.EvalMacro(intp, r)
 	default:
-		return nil, NewEvalError(-1003, "call on a non function")
+		return nil, NewErrTypeMismatch("function")
 	}
 }
 
@@ -406,7 +420,8 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, er
 			if v, ok := kwArgMap[argName]; ok {
 				argVals[argName] = v
 			} else {
-				return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
+				//return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
+				return nil, NewErrKeywordArgument(argName)
 			}
 		}
 
@@ -417,8 +432,10 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, er
 		}
 	} else {
 		if len(self.Args) < len(funDef.requiredArgNames) {
-			reqArgs := strings.Join(funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)], ", ")
-			return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
+			//reqArgs := strings.Join(funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)], ", ")
+			//return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
+			required := funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)]
+			return nil, NewErrTooFewArguments(required)
 		}
 		for i, argNode := range self.Args {
 			a, err := argNode.arg.Eval(intp)
@@ -438,7 +455,8 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, er
 					argVals[funDef.varArgName] = []any{a}
 				}
 			} else {
-				return nil, NewEvalError(-5002, "too many arguments")
+				//return nil, NewEvalError(-5002, "too many arguments")
+				return nil, NewErrTooManyArguments()
 			}
 		}
 	}
@@ -462,7 +480,8 @@ func (self FunCall) evalArgsToMap(intp *Interpreter) (map[string]any, error) {
 
 func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 	if len(macro.requiredArgNames) > len(self.Args) {
-		return nil, NewEvalError(-1005, "number of args of macro mismatch")
+		return nil, NewErrTooFewArguments(macro.requiredArgNames[len(self.Args):])
+		//return nil, NewEvalError(-1005, "number of args of macro mismatch")
 	}
 
 	argASTs := make(map[string]AST)
@@ -477,7 +496,8 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 			if ast, ok := kwArgMap[argName]; ok {
 				argASTs[argName] = ast
 			} else {
-				return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
+				//return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
+				return nil, NewErrKeywordArgument(argName)
 			}
 		}
 
@@ -488,8 +508,9 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 		}
 	} else {
 		if len(self.Args) < len(macro.requiredArgNames) {
-			reqArgs := strings.Join(macro.requiredArgNames[len(self.Args):len(macro.requiredArgNames)], ", ")
-			return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
+			//reqArgs := strings.Join(macro.requiredArgNames[len(self.Args):len(macro.requiredArgNames)], ", ")
+			//return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
+			return nil, NewErrTooFewArguments(macro.requiredArgNames[len(self.Args):])
 		}
 		for i, argNode := range self.Args {
 			if i < len(macro.requiredArgNames) {
@@ -499,7 +520,8 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 			} else if macro.varArgName != "" {
 				varArgs = append(varArgs, argNode.arg)
 			} else {
-				return nil, NewEvalError(-5002, "too many arguments")
+				//return nil, NewEvalError(-5002, "too many arguments")
+				return nil, NewErrTooManyArguments()
 			}
 		}
 	}
@@ -507,8 +529,11 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 }
 
 func (self FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (any, error) {
-	if len(funDef.Args) != len(self.Args) {
-		return nil, NewEvalError(-1004, "number of args mismatch")
+	if len(funDef.Args) > len(self.Args) {
+		//return nil, NewEvalError(-1004, "number of args mismatch")
+		return nil, NewErrTooFewArguments(funDef.Args[len(self.Args):])
+	} else if len(funDef.Args) < len(self.Args) {
+		return nil, NewErrTooManyArguments()
 	}
 	//var args []any
 	intp.PushEmpty()

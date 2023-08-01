@@ -213,7 +213,8 @@ func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op 
 			}
 		}
 	}
-	return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad type in op, %T %s %T", leftVal, op, rightVal))
+	//return nil, NewEvalError(-3101, "invalid types", fmt.Sprintf("bad types in op, %s %s %s", typeName(leftVal), op, typeName(rightVal)))
+	return nil, NewErrBadOp(typeName(leftVal), op, typeName(rightVal))
 }
 
 func (self Binop) addOp(intp *Interpreter) (any, error) {
@@ -362,20 +363,24 @@ func (self Binop) indexAtOp(intp *Interpreter) (any, error) {
 		if nRight, ok := rightVal.(*Number); ok {
 			return v[nRight.Int64()], nil
 		} else {
-			return nil, NewEvalError(-3200, "non int index")
+			//return nil, NewEvalError(-3200, "non int index")
+			return nil, NewErrIndex("non int index")
 		}
 	case map[string]any:
 		if strRight, ok := rightVal.(string); ok {
 			if elem, ok := v[strRight]; ok {
 				return elem, nil
 			} else {
-				return nil, NewEvalError(-3201, "key not found")
+				//return nil, NewEvalError(-3201, "key not found")
+				return nil, NewErrKeyNotFound(strRight)
 			}
 		} else {
-			return nil, NewEvalError(-3200, "non string index")
+			//return nil, NewEvalError(-3200, "non string index")
+			return nil, NewErrIndex("non string index")
 		}
 	default:
-		return nil, NewEvalError(-3202, "non indexable value")
+		//return nil, NewEvalError(-3202, "non indexable value")
+		return nil, NewErrIndex("non-indexable value")
 	}
 }
 
@@ -399,6 +404,8 @@ func (self Binop) inOp(intp *Interpreter) (any, error) {
 		}
 		return false, nil
 	default:
-		return nil, NewEvalError(-3202, "non in value")
+		//return nil, NewEvalError(-3202, "non in value")
+		//return nil, NewErrValue("cannot apply in op")
+		return nil, NewErrBadOp(typeName(leftVal), "in", typeName(rightVal))
 	}
 }
