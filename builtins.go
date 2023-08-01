@@ -40,10 +40,12 @@ func extractList(args map[string]any, argName string) ([]any, error) {
 			}
 			return listV, nil
 		} else {
-			return nil, NewEvalError(-7002, "cannot extract list")
+			//return nil, NewEvalError(-7002, "cannot extract list")
+			return nil, NewErrTypeMismatch("list")
 		}
 	} else {
-		return nil, NewEvalError(-7001, "no argument name")
+		//return nil, NewEvalError(-7001, "no argument name")
+		return nil, NewErrKeyNotFound(argName)
 	}
 }
 
@@ -476,7 +478,8 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		list, ok := vlist.([]any)
 		if !ok {
-			return nil, NewEvalError(-4080, "the first argument is not list")
+			//return nil, NewEvalError(-4080, "the first argument is not list")
+			return nil, NewErrTypeMismatch("list")
 		}
 
 		vpred, err := args["predicates"].Eval(intp)
@@ -485,7 +488,8 @@ func installBuiltinFunctions(prelude *Prelude) {
 		}
 		predicates, ok := vpred.(*FunDef)
 		if !ok {
-			return nil, NewEvalError(-4080, "the second argument is not function")
+			//return nil, NewEvalError(-4080, "the second argument is not function")
+			return nil, NewErrTypeMismatch("function")
 		}
 
 		newList := append([]any{}, list...)

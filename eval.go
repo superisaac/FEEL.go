@@ -67,6 +67,12 @@ func typeName(a any) string {
 		return "duration"
 	case *RangeValue:
 		return "range"
+	case *NativeFun:
+		return "function"
+	case *FunDef:
+		return "function"
+	case *Macro:
+		return "function"
 	default:
 		return "unknown"
 	}

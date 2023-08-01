@@ -118,7 +118,8 @@ func (self *Prelude) Load() {
 		name, err := args["name"].Eval(intp)
 		strName, ok := name.(string)
 		if !ok {
-			return nil, NewEvalError(-9001, "arg[name].type is not string")
+			//return nil, NewEvalError(-9001, "arg[name].type is not string")
+			return nil, NewErrTypeMismatch("string")
 		}
 		v, err := args["value"].Eval(intp)
 		if err != nil {
