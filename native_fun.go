@@ -72,7 +72,7 @@ func (self *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (int
 }
 
 // macro
-type MacroDef func(intp *Interpreter, args map[string]AST, varArgs []AST) (interface{}, error)
+type MacroDef func(intp *Interpreter, args map[string]Node, varArgs []Node) (interface{}, error)
 type Macro struct {
 	fn               MacroDef
 	requiredArgNames []string
@@ -114,7 +114,7 @@ func GetPrelude() *Prelude {
 }
 
 func (self *Prelude) Load() {
-	self.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]AST, varArgs []AST) (interface{}, error) {
+	self.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (interface{}, error) {
 		name, err := args["name"].Eval(intp)
 		strName, ok := name.(string)
 		if !ok {
@@ -129,7 +129,7 @@ func (self *Prelude) Load() {
 		return nil, nil
 	}).Required("name", "value"))
 
-	self.Bind("block", NewMacro(func(intp *Interpreter, args map[string]AST, exprlist []AST) (interface{}, error) {
+	self.Bind("block", NewMacro(func(intp *Interpreter, args map[string]Node, exprlist []Node) (interface{}, error) {
 		var lastValue interface{}
 		var err error
 		for _, expr := range exprlist {

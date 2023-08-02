@@ -64,7 +64,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return !boolValue(v), nil
 	}).Required("from"))
 
-	prelude.Bind("is defined", NewMacro(func(intp *Interpreter, args map[string]AST, varArgs []AST) (any, error) {
+	prelude.Bind("is defined", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
 		if varNode, ok := args["value"].(*Var); ok {
 			if _, ok := intp.Resolve(varNode.Name); !ok {
 				return false, nil
@@ -471,7 +471,7 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return flattened, nil
 	}).Required("list"))
 
-	prelude.Bind("sort", NewMacro(func(intp *Interpreter, args map[string]AST, varargs []AST) (any, error) {
+	prelude.Bind("sort", NewMacro(func(intp *Interpreter, args map[string]Node, varargs []Node) (any, error) {
 		vlist, err := args["list"].Eval(intp)
 		if err != nil {
 			return nil, err

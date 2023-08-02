@@ -153,7 +153,7 @@ func (self *Interpreter) Bind(name string, value any) {
 	}
 }
 
-// AST's eval functions
+// Node's eval functions
 func (self NumberNode) Eval(intp *Interpreter) (any, error) {
 	return NewNumber(self.Value), nil
 }
@@ -490,17 +490,17 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 		//return nil, NewEvalError(-1005, "number of args of macro mismatch")
 	}
 
-	argASTs := make(map[string]AST)
-	var varArgs []AST
+	argNodes := make(map[string]Node)
+	var varArgs []Node
 	if self.keywordArgs {
-		kwArgMap := make(map[string]AST)
+		kwArgMap := make(map[string]Node)
 		for _, argNode := range self.Args {
 			kwArgMap[argNode.argName] = argNode.arg
 		}
 
 		for _, argName := range macro.requiredArgNames {
 			if ast, ok := kwArgMap[argName]; ok {
-				argASTs[argName] = ast
+				argNodes[argName] = ast
 			} else {
 				//return nil, NewEvalError(-5001, "no keyword argument", fmt.Sprintf("no keyword argument %s", argName))
 				return nil, NewErrKeywordArgument(argName)
@@ -509,7 +509,7 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 
 		for _, argName := range macro.optionalArgNames {
 			if ast, ok := kwArgMap[argName]; ok {
-				argASTs[argName] = ast
+				argNodes[argName] = ast
 			}
 		}
 	} else {
@@ -520,9 +520,9 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 		}
 		for i, argNode := range self.Args {
 			if i < len(macro.requiredArgNames) {
-				argASTs[macro.requiredArgNames[i]] = argNode.arg
+				argNodes[macro.requiredArgNames[i]] = argNode.arg
 			} else if i < len(macro.requiredArgNames)+len(macro.optionalArgNames) {
-				argASTs[macro.optionalArgNames[i-len(macro.requiredArgNames)]] = argNode.arg
+				argNodes[macro.optionalArgNames[i-len(macro.requiredArgNames)]] = argNode.arg
 			} else if macro.varArgName != "" {
 				varArgs = append(varArgs, argNode.arg)
 			} else {
@@ -531,7 +531,7 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 			}
 		}
 	}
-	return macro.fn(intp, argASTs, varArgs)
+	return macro.fn(intp, argNodes, varArgs)
 }
 
 func (self FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (any, error) {

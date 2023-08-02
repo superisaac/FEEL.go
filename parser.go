@@ -42,7 +42,7 @@ func hasDupName(names []string) (bool, string) {
 	return false, ""
 }
 
-func ParseString(input string) (AST, error) {
+func ParseString(input string) (Node, error) {
 	parser := NewParser(NewScanner(input))
 	return parser.Parse()
 }
@@ -80,9 +80,9 @@ func (self Parser) CurrentToken() ScannerToken {
 	return self.scanner.Current()
 }
 
-func (self *Parser) Parse() (AST, error) {
+func (self *Parser) Parse() (Node, error) {
 	self.scanner.Next()
-	var exps []AST
+	var exps []Node
 
 	for !self.CurrentToken().Expect(TokenEOF) {
 		if self.CurrentToken().Expect(";") {
@@ -105,7 +105,7 @@ func (self *Parser) Parse() (AST, error) {
 	}
 }
 
-func (self *Parser) parseUnaryTestElement() (AST, error) {
+func (self *Parser) parseUnaryTestElement() (Node, error) {
 	if self.CurrentToken().Expect(">", ">=", "<", "<=", "!=", "=") {
 		op := self.CurrentToken().Kind
 		self.scanner.Next()
@@ -124,14 +124,14 @@ func (self *Parser) parseUnaryTestElement() (AST, error) {
 	}
 }
 
-func (self *Parser) parseUnaryTest() (AST, error) {
+func (self *Parser) parseUnaryTest() (Node, error) {
 	exp, err := self.parseUnaryTestElement()
 	if err != nil {
 		return nil, err
 	}
 
 	if self.CurrentToken().Expect(",") {
-		elements := []AST{exp}
+		elements := []Node{exp}
 		for self.CurrentToken().Expect(",") {
 			self.scanner.Next()
 
@@ -147,13 +147,13 @@ func (self *Parser) parseUnaryTest() (AST, error) {
 	}
 }
 
-func (self *Parser) expression() (AST, error) {
+func (self *Parser) expression() (Node, error) {
 	return self.inOp()
 }
 
-type astFunc func() (AST, error)
+type astFunc func() (Node, error)
 
-func (self *Parser) binop(ops []string, subfunc astFunc) (AST, error) {
+func (self *Parser) binop(ops []string, subfunc astFunc) (Node, error) {
 	left, err := subfunc()
 	if err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (self *Parser) binop(ops []string, subfunc astFunc) (AST, error) {
 	return left, nil
 }
 
-func (self *Parser) binopKeywords(ops []string, subfunc astFunc) (AST, error) {
+func (self *Parser) binopKeywords(ops []string, subfunc astFunc) (Node, error) {
 	left, err := subfunc()
 	if err != nil {
 		return nil, err
@@ -194,49 +194,49 @@ func (self *Parser) binopKeywords(ops []string, subfunc astFunc) (AST, error) {
 }
 
 // pase chains
-func (self *Parser) inOp() (AST, error) {
+func (self *Parser) inOp() (Node, error) {
 	return self.binopKeywords(
 		[]string{"in"},
 		self.logicOrOp,
 	)
 }
 
-func (self *Parser) logicOrOp() (AST, error) {
+func (self *Parser) logicOrOp() (Node, error) {
 	return self.binopKeywords(
 		[]string{"or"},
 		self.logicAndOp,
 	)
 }
 
-func (self *Parser) logicAndOp() (AST, error) {
+func (self *Parser) logicAndOp() (Node, error) {
 	return self.binopKeywords(
 		[]string{"and"},
 		self.compareOp,
 	)
 }
 
-func (self *Parser) compareOp() (AST, error) {
+func (self *Parser) compareOp() (Node, error) {
 	return self.binop(
 		[]string{">", ">=", "<", "<=", "!=", "="},
 		self.addOrSubOp,
 	)
 }
 
-func (self *Parser) addOrSubOp() (AST, error) {
+func (self *Parser) addOrSubOp() (Node, error) {
 	return self.binop(
 		[]string{"+", "-"},
 		self.mulOrDivOp,
 	)
 }
 
-func (self *Parser) mulOrDivOp() (AST, error) {
+func (self *Parser) mulOrDivOp() (Node, error) {
 	return self.binop(
 		[]string{"*", "/", "%"},
 		self.parseFuncallOrIndexOrDot,
 	)
 }
 
-func (self *Parser) parseFuncallOrIndexOrDot() (AST, error) {
+func (self *Parser) parseFuncallOrIndexOrDot() (Node, error) {
 	exp, err := self.singleElement()
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func (self *Parser) parseFuncallOrIndexOrDot() (AST, error) {
 
 var funcallTrailing = regexp.MustCompile(`\s*\($`)
 
-func (self *Parser) parseFuncall() (AST, error) {
+func (self *Parser) parseFuncall() (Node, error) {
 	funcallWithRbracket := self.CurrentToken().Value
 	funcName := funcallTrailing.ReplaceAllString(funcallWithRbracket, "")
 	return self.parseFuncallRest(&Var{Name: funcName})
@@ -298,7 +298,7 @@ func (self *Parser) parseFunccallArg() (funcallArg, error) {
 	}
 }
 
-func (self *Parser) parseFuncallRest(funExpr AST) (AST, error) {
+func (self *Parser) parseFuncallRest(funExpr Node) (Node, error) {
 	self.scanner.Next()
 	// parse function arguments
 	var args []funcallArg = nil
@@ -336,7 +336,7 @@ func (self *Parser) parseFuncallRest(funExpr AST) (AST, error) {
 	}, nil
 }
 
-func (self *Parser) parseIndexRest(exp AST) (AST, error) {
+func (self *Parser) parseIndexRest(exp Node) (Node, error) {
 	self.scanner.Next()
 
 	// parse index arguments
@@ -351,7 +351,7 @@ func (self *Parser) parseIndexRest(exp AST) (AST, error) {
 	return &Binop{Left: exp, Op: "[]", Right: at}, nil
 }
 
-func (self *Parser) parseDotRest(exp AST) (AST, error) {
+func (self *Parser) parseDotRest(exp Node) (Node, error) {
 	self.scanner.Next()
 	// parse index arguments
 	attr, err := self.parseName()
@@ -361,7 +361,7 @@ func (self *Parser) parseDotRest(exp AST) (AST, error) {
 	return &DotOp{Left: exp, Attr: attr}, nil
 }
 
-func (self *Parser) singleElement() (AST, error) {
+func (self *Parser) singleElement() (Node, error) {
 	curr := self.CurrentToken()
 	switch curr.Kind {
 	case TokenName:
@@ -408,7 +408,7 @@ func (self *Parser) singleElement() (AST, error) {
 	}
 }
 
-func (self *Parser) parseVar() (AST, error) {
+func (self *Parser) parseVar() (Node, error) {
 	name, err := self.parseName()
 	if err != nil {
 		return nil, err
@@ -416,7 +416,7 @@ func (self *Parser) parseVar() (AST, error) {
 	return &Var{Name: name}, nil
 }
 
-func (self *Parser) parseBool() (AST, error) {
+func (self *Parser) parseBool() (Node, error) {
 	v := self.CurrentToken().Value
 	self.scanner.Next()
 	switch v {
@@ -429,7 +429,7 @@ func (self *Parser) parseBool() (AST, error) {
 	}
 }
 
-func (self *Parser) parseNull() (AST, error) {
+func (self *Parser) parseNull() (Node, error) {
 	self.scanner.Next()
 	return &NullNode{}, nil
 }
@@ -470,7 +470,7 @@ func (self *Parser) parseName(stopKeywords ...string) (string, error) {
 	return strings.Join(names, " "), nil
 }
 
-func (self *Parser) parseBracketOrRange() (AST, error) {
+func (self *Parser) parseBracketOrRange() (Node, error) {
 	self.scanner.Next()
 	c, err := self.expression()
 	if err != nil {
@@ -499,7 +499,7 @@ func (self *Parser) parseBracketOrRange() (AST, error) {
 	return c, nil
 }
 
-func (self *Parser) parseRangeOrArray() (AST, error) {
+func (self *Parser) parseRangeOrArray() (Node, error) {
 	prefixKind := self.CurrentToken().Kind // prefixKind is '['
 	self.scanner.Next()
 	if self.CurrentToken().Expect("]") {
@@ -537,8 +537,8 @@ func (self *Parser) parseRangeOrArray() (AST, error) {
 	return nil, self.Unexpected(")", "]")
 }
 
-func (self *Parser) parseArrayGivenFirst(prefixKind string, firstElem AST) (AST, error) {
-	elements := []AST{firstElem}
+func (self *Parser) parseArrayGivenFirst(prefixKind string, firstElem Node) (Node, error) {
+	elements := []Node{firstElem}
 	for self.CurrentToken().Expect(",") {
 		self.scanner.Next()
 		elem, err := self.expression()
@@ -554,13 +554,13 @@ func (self *Parser) parseArrayGivenFirst(prefixKind string, firstElem AST) (AST,
 	return &ArrayNode{Elements: elements}, nil
 }
 
-func (self *Parser) parseNumberNode() (AST, error) {
+func (self *Parser) parseNumberNode() (Node, error) {
 	v := self.CurrentToken().Value
 	self.scanner.Next()
 	return &NumberNode{Value: v}, nil
 }
 
-func (self *Parser) parseStringNode() (AST, error) {
+func (self *Parser) parseStringNode() (Node, error) {
 	v := self.CurrentToken().Value
 	self.scanner.Next()
 	return &StringNode{Value: v}, nil
@@ -581,13 +581,13 @@ func (self *Parser) parseMapKey() (string, error) {
 	}
 }
 
-func (self *Parser) parseTemporalNode() (AST, error) {
+func (self *Parser) parseTemporalNode() (Node, error) {
 	v := self.CurrentToken().Value
 	self.scanner.Next()
 	return &TemporalNode{Value: v}, nil
 }
 
-func (self *Parser) parseMapNode() (AST, error) {
+func (self *Parser) parseMapNode() (Node, error) {
 	self.scanner.Next()
 	var mapValues []mapItem
 
@@ -621,7 +621,7 @@ func (self *Parser) parseMapNode() (AST, error) {
 	return &MapNode{Values: mapValues}, nil
 }
 
-func (self *Parser) parseIfExpression() (AST, error) {
+func (self *Parser) parseIfExpression() (Node, error) {
 	self.scanner.Next()
 	cond, err := self.expression()
 	if err != nil {
@@ -650,7 +650,7 @@ func (self *Parser) parseIfExpression() (AST, error) {
 
 }
 
-func (self *Parser) parseForExpr() (AST, error) {
+func (self *Parser) parseForExpr() (Node, error) {
 	self.scanner.Next()
 	varName, err := self.parseName("in", "for")
 
@@ -694,7 +694,7 @@ func (self *Parser) parseForExpr() (AST, error) {
 	}, nil
 }
 
-func (self *Parser) parseSomeOrEvery() (AST, error) {
+func (self *Parser) parseSomeOrEvery() (Node, error) {
 	cmd := self.CurrentToken().Value
 	self.scanner.Next()
 	// parse variable name
@@ -738,7 +738,7 @@ func (self *Parser) parseSomeOrEvery() (AST, error) {
 
 }
 
-func (self *Parser) parseFunDef() (AST, error) {
+func (self *Parser) parseFunDef() (Node, error) {
 	self.scanner.Next()
 	if !self.CurrentToken().Expect("(") {
 		return nil, self.Unexpected("(")

@@ -11,7 +11,7 @@ type Interpreter struct {
 	ScopeStack []Scope
 }
 
-type AST interface {
+type Node interface {
 	Repr() string
 	Eval(*Interpreter) (interface{}, error)
 }
@@ -23,8 +23,8 @@ type HasAttrs interface {
 // binary operator
 type Binop struct {
 	Op    string
-	Left  AST
-	Right AST
+	Left  Node
+	Right Node
 }
 
 func (self Binop) Repr() string {
@@ -33,7 +33,7 @@ func (self Binop) Repr() string {
 
 // function call
 type DotOp struct {
-	Left AST
+	Left Node
 	Attr string
 }
 
@@ -44,11 +44,11 @@ func (self DotOp) Repr() string {
 // function call
 type funcallArg struct {
 	argName string
-	arg     AST
+	arg     Node
 }
 
 type FunCall struct {
-	FunRef      AST
+	FunRef      Node
 	Args        []funcallArg
 	keywordArgs bool
 }
@@ -71,7 +71,7 @@ func (self FunCall) Repr() string {
 // function definition
 type FunDef struct {
 	Args []string
-	Body AST
+	Body Node
 }
 
 func (self FunDef) Repr() string {
@@ -141,7 +141,7 @@ func (self StringNode) Content() string {
 
 type mapItem struct {
 	Name  string
-	Value AST
+	Value Node
 }
 
 type MapNode struct {
@@ -173,10 +173,10 @@ func (self TemporalNode) Content() string {
 // range
 type RangeNode struct {
 	StartOpen bool
-	Start     AST
+	Start     Node
 
 	EndOpen bool
-	End     AST
+	End     Node
 }
 
 func (self RangeNode) Repr() string {
@@ -193,9 +193,9 @@ func (self RangeNode) Repr() string {
 
 // if expression
 type IfExpr struct {
-	Cond       AST
-	ThenBranch AST
-	ElseBranch AST
+	Cond       Node
+	ThenBranch Node
+	ElseBranch Node
 }
 
 func (self IfExpr) Repr() string {
@@ -204,7 +204,7 @@ func (self IfExpr) Repr() string {
 
 // array
 type ArrayNode struct {
-	Elements []AST
+	Elements []Node
 }
 
 func (self ArrayNode) Repr() string {
@@ -217,7 +217,7 @@ func (self ArrayNode) Repr() string {
 
 // ExpressList
 type ExprList struct {
-	Elements []AST
+	Elements []Node
 }
 
 func (self ExprList) Repr() string {
@@ -230,7 +230,7 @@ func (self ExprList) Repr() string {
 
 // MultiTests
 type MultiTests struct {
-	Elements []AST
+	Elements []Node
 }
 
 func (self MultiTests) Repr() string {
@@ -244,8 +244,8 @@ func (self MultiTests) Repr() string {
 // For expression
 type ForExpr struct {
 	Varname    string
-	ListExpr   AST
-	ReturnExpr AST
+	ListExpr   Node
+	ReturnExpr Node
 }
 
 func (self ForExpr) Repr() string {
@@ -255,8 +255,8 @@ func (self ForExpr) Repr() string {
 // Some expression
 type SomeExpr struct {
 	Varname    string
-	ListExpr   AST
-	FilterExpr AST
+	ListExpr   Node
+	FilterExpr Node
 }
 
 func (self SomeExpr) Repr() string {
@@ -266,8 +266,8 @@ func (self SomeExpr) Repr() string {
 // Every expression
 type EveryExpr struct {
 	Varname    string
-	ListExpr   AST
-	FilterExpr AST
+	ListExpr   Node
+	FilterExpr Node
 }
 
 func (self EveryExpr) Repr() string {
