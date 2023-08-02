@@ -181,6 +181,8 @@ func TestTemporal(t *testing.T) {
 	ast, err := ParseString(input)
 	assert.Nil(err)
 	assert.Equal(`@"2023-06-07"`, ast.Repr())
+	assert.Equal(0, ast.TextRange().Start.Column)
+	assert.Equal(13, ast.TextRange().End.Column)
 
 	node, ok := ast.(*TemporalNode)
 	assert.True(ok)

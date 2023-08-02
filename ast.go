@@ -14,10 +14,16 @@ type Interpreter struct {
 type Node interface {
 	Repr() string
 	Eval(*Interpreter) (interface{}, error)
+	TextRange() TextRange
 }
 
 type HasAttrs interface {
 	GetAttr(name string) (interface{}, bool)
+}
+
+type TextRange struct {
+	Start ScanPosition
+	End   ScanPosition
 }
 
 // binary operator
@@ -25,8 +31,13 @@ type Binop struct {
 	Op    string
 	Left  Node
 	Right Node
+
+	textRange TextRange
 }
 
+func (self Binop) TextRange() TextRange {
+	return self.textRange
+}
 func (self Binop) Repr() string {
 	return fmt.Sprintf("(%s %s %s)", self.Op, self.Left.Repr(), self.Right.Repr())
 }
@@ -35,6 +46,12 @@ func (self Binop) Repr() string {
 type DotOp struct {
 	Left Node
 	Attr string
+
+	textRange TextRange
+}
+
+func (self DotOp) TextRange() TextRange {
+	return self.textRange
 }
 
 func (self DotOp) Repr() string {
@@ -51,8 +68,13 @@ type FunCall struct {
 	FunRef      Node
 	Args        []funcallArg
 	keywordArgs bool
+
+	textRange TextRange
 }
 
+func (self FunCall) TextRange() TextRange {
+	return self.textRange
+}
 func (self FunCall) Repr() string {
 	argReprs := make([]string, 0)
 	if self.keywordArgs {
@@ -72,6 +94,12 @@ func (self FunCall) Repr() string {
 type FunDef struct {
 	Args []string
 	Body Node
+
+	textRange TextRange
+}
+
+func (self FunDef) TextRange() TextRange {
+	return self.textRange
 }
 
 func (self FunDef) Repr() string {
@@ -80,7 +108,12 @@ func (self FunDef) Repr() string {
 
 // variable
 type Var struct {
-	Name string
+	Name      string
+	textRange TextRange
+}
+
+func (self Var) TextRange() TextRange {
+	return self.textRange
 }
 
 func (self Var) Repr() string {
@@ -93,6 +126,12 @@ func (self Var) Repr() string {
 // number
 type NumberNode struct {
 	Value string
+
+	textRange TextRange
+}
+
+func (self NumberNode) TextRange() TextRange {
+	return self.textRange
 }
 
 func (self NumberNode) Repr() string {
@@ -102,8 +141,13 @@ func (self NumberNode) Repr() string {
 // bool
 type BoolNode struct {
 	Value bool
+
+	textRange TextRange
 }
 
+func (self BoolNode) TextRange() TextRange {
+	return self.textRange
+}
 func (self BoolNode) Repr() string {
 	if self.Value {
 		return "true"
@@ -114,19 +158,29 @@ func (self BoolNode) Repr() string {
 
 // null
 type NullNode struct {
+	textRange TextRange
 }
 
 func (self NullNode) Repr() string {
 	return "null"
 }
 
+func (self NullNode) TextRange() TextRange {
+	return self.textRange
+}
+
 // string
 type StringNode struct {
 	Value string
+
+	textRange TextRange
 }
 
 func (self StringNode) Repr() string {
 	return self.Value
+}
+func (self StringNode) TextRange() TextRange {
+	return self.textRange
 }
 func (self StringNode) Content() string {
 	// trim leading and trailing quotes
@@ -146,8 +200,13 @@ type mapItem struct {
 
 type MapNode struct {
 	Values []mapItem
+
+	textRange TextRange
 }
 
+func (self MapNode) TextRange() TextRange {
+	return self.textRange
+}
 func (self MapNode) Repr() string {
 	var ss []string
 	for _, item := range self.Values {
@@ -159,9 +218,13 @@ func (self MapNode) Repr() string {
 
 // temporal
 type TemporalNode struct {
-	Value string
+	Value     string
+	textRange TextRange
 }
 
+func (self TemporalNode) TextRange() TextRange {
+	return self.textRange
+}
 func (self TemporalNode) Repr() string {
 	return self.Value
 }
@@ -177,8 +240,13 @@ type RangeNode struct {
 
 	EndOpen bool
 	End     Node
+
+	textRange TextRange
 }
 
+func (self RangeNode) TextRange() TextRange {
+	return self.textRange
+}
 func (self RangeNode) Repr() string {
 	startQuote := "["
 	if self.StartOpen {
@@ -196,8 +264,13 @@ type IfExpr struct {
 	Cond       Node
 	ThenBranch Node
 	ElseBranch Node
+
+	textRange TextRange
 }
 
+func (self IfExpr) TextRange() TextRange {
+	return self.textRange
+}
 func (self IfExpr) Repr() string {
 	return fmt.Sprintf("(if %s %s %s)", self.Cond.Repr(), self.ThenBranch.Repr(), self.ElseBranch.Repr())
 }
@@ -205,8 +278,13 @@ func (self IfExpr) Repr() string {
 // array
 type ArrayNode struct {
 	Elements []Node
+
+	textRange TextRange
 }
 
+func (self ArrayNode) TextRange() TextRange {
+	return self.textRange
+}
 func (self ArrayNode) Repr() string {
 	s := make([]string, 0)
 	for _, elem := range self.Elements {
@@ -218,8 +296,13 @@ func (self ArrayNode) Repr() string {
 // ExpressList
 type ExprList struct {
 	Elements []Node
+
+	textRange TextRange
 }
 
+func (self ExprList) TextRange() TextRange {
+	return self.textRange
+}
 func (self ExprList) Repr() string {
 	s := make([]string, 0)
 	for _, elem := range self.Elements {
@@ -230,9 +313,13 @@ func (self ExprList) Repr() string {
 
 // MultiTests
 type MultiTests struct {
-	Elements []Node
+	Elements  []Node
+	textRange TextRange
 }
 
+func (self MultiTests) TextRange() TextRange {
+	return self.textRange
+}
 func (self MultiTests) Repr() string {
 	s := make([]string, 0)
 	for _, elem := range self.Elements {
@@ -246,8 +333,12 @@ type ForExpr struct {
 	Varname    string
 	ListExpr   Node
 	ReturnExpr Node
+	textRange  TextRange
 }
 
+func (self ForExpr) TextRange() TextRange {
+	return self.textRange
+}
 func (self ForExpr) Repr() string {
 	return fmt.Sprintf("(for %s %s %s)", self.Varname, self.ListExpr.Repr(), self.ReturnExpr.Repr())
 }
@@ -257,8 +348,12 @@ type SomeExpr struct {
 	Varname    string
 	ListExpr   Node
 	FilterExpr Node
+	textRange  TextRange
 }
 
+func (self SomeExpr) TextRange() TextRange {
+	return self.textRange
+}
 func (self SomeExpr) Repr() string {
 	return fmt.Sprintf("(some \"%s\" %s %s)", self.Varname, self.ListExpr.Repr(), self.FilterExpr.Repr())
 }
@@ -268,8 +363,13 @@ type EveryExpr struct {
 	Varname    string
 	ListExpr   Node
 	FilterExpr Node
+
+	textRange TextRange
 }
 
+func (self EveryExpr) TextRange() TextRange {
+	return self.textRange
+}
 func (self EveryExpr) Repr() string {
 	return fmt.Sprintf("(every \"%s\" %s %s)", self.Varname, self.ListExpr.Repr(), self.FilterExpr.Repr())
 }
