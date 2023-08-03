@@ -34,3 +34,13 @@ interpreter.
 ```
 
 for more examples please refer to testing
+
+## Use in golang codes
+```golang
+import (
+  feel "github.com/superisaac/FEEL.go"
+)
+
+res, err := feel.EvalString(input)
+
+```
