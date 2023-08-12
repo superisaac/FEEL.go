@@ -1,6 +1,7 @@
 package feel
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,8 @@ func TestSimpleScannerFinding(t *testing.T) {
 
 + "multiline
 	string中文"
+
+	中文变量andγβ
 	`
 
 	scanner := NewScanner(input)
@@ -58,7 +61,19 @@ func TestSimpleScannerFinding(t *testing.T) {
 	assert.Equal("string", tokens[12].Kind)
 	assert.Equal("\"multiline\n\tstring中文\"", tokens[12].Value)
 
+	assert.Equal("name", tokens[13].Kind)
+	assert.Equal("中文变量andγβ", tokens[13].Value)
+
 	// test against position
-	assert.Equal(12, scanner.Pos.Row)
+	assert.Equal(14, scanner.Pos.Row)
 	assert.Equal(1, scanner.Pos.Column)
+}
+
+func TestUnicodeRegexp(t *testing.T) {
+	assert := assert.New(t)
+
+	reName := regexp.MustCompile(`\p{Han}+`)
+
+	found := reName.FindString("abc(汉字)")
+	assert.Equal("汉字", found)
 }

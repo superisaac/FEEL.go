@@ -81,10 +81,9 @@ var tokenMatchers = []tokenMatcher{
 	match("/", ""),
 	match("%", ""),
 
-	//match(TokenFuncall, `[a-zA-Z_\$][a-zA-Z_\$0-9]*( [a-zA-Z_\$][a-zA-Z_\$0-9]*)+\s*\(`),
-	match(TokenName, `[a-zA-Z_\$][a-zA-Z_\$0-9]*\b`),
-	//match(TokenName, `\w+\b`),
-	//match(TokenName, `(\w|[\u4e00-\u9fff])+\b`),
+	// variable name support unicode chars, currently Han and Greek is in the list
+	// refer to https://github.com/google/re2/wiki/Syntax
+	match(TokenName, `[a-zA-Z_\$\p{Han}\p{Greek}][a-zA-Z_\$0-9\p{Han}\p{Greek}]*`),
 }
 
 type ScanPosition struct {
