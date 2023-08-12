@@ -296,7 +296,33 @@ func installBuiltinFunctions(prelude *Prelude) {
 		return true, nil
 	}).Vararg("list"))
 
+	prelude.Bind("and", NewNativeFunc(func(args map[string]any) (any, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range list {
+			if !boolValue(v) {
+				return false, nil
+			}
+		}
+		return true, nil
+	}).Vararg("list"))
+
 	prelude.Bind("any", NewNativeFunc(func(args map[string]any) (any, error) {
+		list, err := extractList(args, "list")
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range list {
+			if boolValue(v) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}).Vararg("list"))
+
+	prelude.Bind("or", NewNativeFunc(func(args map[string]any) (any, error) {
 		list, err := extractList(args, "list")
 		if err != nil {
 			return nil, err

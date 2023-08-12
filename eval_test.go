@@ -75,6 +75,8 @@ func TestEvalPairs(t *testing.T) {
 
 		{`substring(string: "abcdef", start position: 3, length: 3)`, "cde"},
 		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
+		{`not({})`, true},
+		{`not({a: 1})`, false},
 
 		// list functions
 		{`median([3, 5, 9, 1, "hello", -2])`, N(3)},
@@ -95,6 +97,10 @@ func TestEvalPairs(t *testing.T) {
 
 		{`string join(["hello", "world"])`, "helloworld"},
 		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]"},
+
+		{`or([false, 0, true, false, 1])`, true},
+		{`and([false, 0, true, false, 1])`, false},
+		{`and([true, 1, true, "ok"])`, true},
 
 		// context/map functions
 		{`get value({a: 2}, "b")`, Null},

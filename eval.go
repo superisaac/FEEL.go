@@ -34,6 +34,8 @@ func boolValue(condVal any) bool {
 		return v != ""
 	case []any:
 		return v != nil && len(v) > 0
+	case map[string]any:
+		return v != nil && len(v) > 0
 	default:
 		return v != nil
 	}
@@ -438,8 +440,6 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, er
 		}
 	} else {
 		if len(self.Args) < len(funDef.requiredArgNames) {
-			//reqArgs := strings.Join(funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)], ", ")
-			//return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
 			required := funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)]
 			return nil, NewErrTooFewArguments(required)
 		}

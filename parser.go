@@ -422,7 +422,9 @@ func (self *Parser) singleElement() (Node, error) {
 		case "every":
 			return self.parseSomeOrEvery()
 		default:
-			return nil, self.Unexpected("keywords")
+			//return nil, self.Unexpected("keywords")
+			// unexpected keywords can be part of names
+			return self.parseVar()
 		}
 	default:
 		return nil, self.Unexpected("name", "number", "string", "(", "[", "keyword")
