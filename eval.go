@@ -147,6 +147,16 @@ func (self Interpreter) Resolve(name string) (any, bool) {
 	return nil, false
 }
 
+func (self Interpreter) Set(name string, value any) bool {
+	for at := len(self.ScopeStack) - 1; at >= 0; at-- {
+		if _, ok := self.ScopeStack[at][name]; ok {
+			self.ScopeStack[at][name] = value
+			return true
+		}
+	}
+	return false
+}
+
 func (self *Interpreter) Bind(name string, value any) {
 	if self.Len() > 0 {
 		self.ScopeStack[self.Len()-1][name] = normalizeValue(value)

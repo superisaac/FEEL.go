@@ -45,6 +45,8 @@ func TestEvalPairs(t *testing.T) {
 		{`bind("a", 5); if a = 5 then "equal" else "not equal"`, "equal"},
 		{`bind("a b", 5); if a b = 5 then "equal" else "not equal"`, "equal"}, // a name has multiple chunks
 
+		{`help(bind)`, "bind value to name in current top scope"},
+
 		// test not
 		{`not( 5 >  6)`, true},
 

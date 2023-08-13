@@ -33,6 +33,7 @@ type NativeFun struct {
 	requiredArgNames []string
 	optionalArgNames []string
 	varArgName       string
+	help             string
 }
 
 func NewNativeFunc(fn NativeFunDef) *NativeFun {
@@ -51,6 +52,11 @@ func (self *NativeFun) Optional(argNames ...string) *NativeFun {
 
 func (self *NativeFun) Vararg(argName string) *NativeFun {
 	self.varArgName = argName
+	return self
+}
+
+func (self *NativeFun) Help(help string) *NativeFun {
+	self.help = help
 	return self
 }
 
@@ -78,6 +84,7 @@ type Macro struct {
 	requiredArgNames []string
 	optionalArgNames []string
 	varArgName       string
+	help             string
 }
 
 func NewMacro(fn MacroDef) *Macro {
@@ -88,12 +95,17 @@ func (self *Macro) Required(argNames ...string) *Macro {
 	self.requiredArgNames = append(self.requiredArgNames, argNames...)
 	return self
 }
+
 func (self *Macro) Optional(argNames ...string) *Macro {
 	self.optionalArgNames = append(self.optionalArgNames, argNames...)
 	return self
 }
 func (self *Macro) Vararg(argName string) *Macro {
 	self.varArgName = argName
+	return self
+}
+func (self *Macro) Help(help string) *Macro {
+	self.help = help
 	return self
 }
 
@@ -114,11 +126,10 @@ func GetPrelude() *Prelude {
 }
 
 func (self *Prelude) Load() {
-	self.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (interface{}, error) {
+	self.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
 		name, err := args["name"].Eval(intp)
 		strName, ok := name.(string)
 		if !ok {
-			//return nil, NewEvalError(-9001, "arg[name].type is not string")
 			return nil, NewErrTypeMismatch("string")
 		}
 		v, err := args["value"].Eval(intp)
@@ -126,8 +137,26 @@ func (self *Prelude) Load() {
 			return nil, err
 		}
 		intp.Bind(strName, v)
-		return nil, nil
-	}).Required("name", "value"))
+		return v, nil
+	}).Required("name", "value").Help("bind value to name in current top scope"))
+
+	self.Bind("set", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
+		name, err := args["name"].Eval(intp)
+		strName, ok := name.(string)
+		if !ok {
+			return nil, NewErrTypeMismatch("string")
+		}
+		v, err := args["value"].Eval(intp)
+		if err != nil {
+			return nil, err
+		}
+		if intp.Set(strName, v) {
+			return v, nil
+		} else {
+			intp.Bind(strName, v)
+			return v, nil
+		}
+	}).Required("name", "value").Help("bind value to name in resolved scope, if not found, it's bind to current top scope(the same as 'bind')"))
 
 	self.Bind("block", NewMacro(func(intp *Interpreter, args map[string]Node, exprlist []Node) (interface{}, error) {
 		var lastValue interface{}
@@ -139,7 +168,30 @@ func (self *Prelude) Load() {
 			}
 		}
 		return lastValue, nil
-	}).Vararg("express list"))
+	}).Vararg("express list").Help("quote a sequence of expresses and return the last result"))
+
+	self.Bind("help", NewMacro(func(intp *Interpreter, args map[string]Node, exprlist []Node) (interface{}, error) {
+		v, err := args["value"].Eval(intp)
+		if err != nil {
+			return nil, err
+		}
+		switch vv := v.(type) {
+		case *NativeFun:
+			return vv.help, nil
+		case *Macro:
+			return vv.help, nil
+		default:
+			return typeName(vv), nil
+		}
+	}).Required("value").Help("the help information of a value"))
+
+	self.Bind("typeof", NewMacro(func(intp *Interpreter, args map[string]Node, exprlist []Node) (interface{}, error) {
+		v, err := args["value"].Eval(intp)
+		if err != nil {
+			return nil, err
+		}
+		return typeName(v), nil
+	}).Required("value").Help("the type of a value"))
 
 	installDatetimeFunctions(self)
 	installBuiltinFunctions(self)
