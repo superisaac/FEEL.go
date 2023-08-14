@@ -404,8 +404,6 @@ func (self Binop) inOp(intp *Interpreter) (any, error) {
 		}
 		return false, nil
 	default:
-		//return nil, NewEvalError(-3202, "non in value")
-		//return nil, NewErrValue("cannot apply in op")
 		return nil, NewErrBadOp(typeName(leftVal), "in", typeName(rightVal))
 	}
 }

@@ -134,6 +134,7 @@ func (self *Interpreter) Pop() Scope {
 	return nil
 }
 
+// resolve a name from the top of scopestack to bottom
 func (self Interpreter) Resolve(name string) (any, bool) {
 	for at := len(self.ScopeStack) - 1; at >= 0; at-- {
 		if v, ok := self.ScopeStack[at][name]; ok {
@@ -143,10 +144,10 @@ func (self Interpreter) Resolve(name string) (any, bool) {
 	if prelude, ok := GetPrelude().Resolve(name); ok {
 		return prelude, ok
 	}
-
 	return nil, false
 }
 
+// resolve the name and set to new value
 func (self Interpreter) Set(name string, value any) bool {
 	for at := len(self.ScopeStack) - 1; at >= 0; at-- {
 		if _, ok := self.ScopeStack[at][name]; ok {
@@ -157,6 +158,7 @@ func (self Interpreter) Set(name string, value any) bool {
 	return false
 }
 
+// bind the value to the name of current scope
 func (self *Interpreter) Bind(name string, value any) {
 	if self.Len() > 0 {
 		self.ScopeStack[self.Len()-1][name] = normalizeValue(value)
@@ -166,10 +168,13 @@ func (self *Interpreter) Bind(name string, value any) {
 }
 
 // Node's eval functions
+
+// Evaluate Number node
 func (self NumberNode) Eval(intp *Interpreter) (any, error) {
 	return NewNumber(self.Value), nil
 }
 
+// Evaluate bool node
 func (self BoolNode) Eval(intp *Interpreter) (any, error) {
 	return self.Value, nil
 }

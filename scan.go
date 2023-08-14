@@ -83,7 +83,7 @@ var tokenMatchers = []tokenMatcher{
 
 	// variable name support unicode chars, currently Han and Greek is in the list
 	// refer to https://github.com/google/re2/wiki/Syntax
-	match(TokenName, `[a-zA-Z_\$\p{Han}\p{Greek}][a-zA-Z_\$0-9\p{Han}\p{Greek}]*`),
+	match(TokenName, `[a-zA-Z_\$\p{Han}\p{Greek}\p{Bopomofo}\p{Hangul}][a-zA-Z_\$0-9\p{Han}\p{Greek}}\p{Bopomofo}\p{Hangul}]*`),
 }
 
 type ScanPosition struct {
