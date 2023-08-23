@@ -361,7 +361,11 @@ func (self Binop) indexAtOp(intp *Interpreter) (any, error) {
 	switch v := leftVal.(type) {
 	case []any:
 		if nRight, ok := rightVal.(*Number); ok {
-			return v[nRight.Int64()], nil
+			at := nRight.Int()
+			if at <= 0 || at > len(v) {
+				return nil, NewErrIndex("index out of range")
+			}
+			return v[at-1], nil
 		} else {
 			//return nil, NewEvalError(-3200, "non int index")
 			return nil, NewErrIndex("non int index")

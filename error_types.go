@@ -27,6 +27,7 @@ func NewEvalError(code int, short string, msgs ...string) *EvalError {
 func NewErrKeyNotFound(keyName string) *EvalError {
 	return NewEvalError(-4000, "key not found", fmt.Sprintf("cannot get key '%s'", keyName))
 }
+
 func NewErrIndex(msg string) *EvalError {
 	return NewEvalError(-4001, "index error", msg)
 }

@@ -1,12 +1,12 @@
 package feel
 
 import (
+	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"math"
 	"sort"
 	"strings"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 func toFEELIndex(idx int) int {
@@ -68,6 +68,17 @@ func installBuiltinFunctions(prelude *Prelude) {
 		if varNode, ok := args["value"].(*Var); ok {
 			if _, ok := intp.Resolve(varNode.Name); !ok {
 				return false, nil
+			}
+		} else {
+			_, err := args["value"].Eval(intp)
+			if err != nil {
+				var evalErr *EvalError
+				if errors.As(err, &evalErr) {
+					if evalErr.Short == "key not found" || evalErr.Short == "index error" {
+						return false, nil
+					}
+				}
+				return false, err
 			}
 		}
 		// TODO: more condition tests

@@ -72,6 +72,10 @@ func TestEvalPairs(t *testing.T) {
 
 		// builtin functions
 		{`is defined(x)`, false},
+		{`bind("x", [1, 2, 3]); is defined(x[5])`, false},
+		{`bind("x", {a: 3, b: 5}); is defined(x.c)`, false},
+		{`bind("x", {a: 3, b: 5}); is defined(x.a)`, true},
+
 		{`bind("x", 666); is defined(x)`, true},        // `x` is bound
 		{`bind("x", 888); is defined(value: x)`, true}, // macro can use keyword arguments
 
