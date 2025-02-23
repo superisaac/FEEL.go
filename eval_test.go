@@ -224,7 +224,7 @@ func Test_EvalString(t *testing.T) {
 	}
 }
 
-func TestEvalUnaryTests(t *testing.T) {
+func Test_EvalStringWithScope_unary_with_default_scope(t *testing.T) {
 	input := `> 8, <= 5`
 	v, err := EvalStringWithScope(input, Scope{"?": 4})
 	assert.Nil(t, err)
@@ -236,6 +236,29 @@ func Test_EvalStringWithScope(t *testing.T) {
 	v, err := EvalStringWithScope(input, Scope{"foo": 5, "bar": 7})
 	assert.Nil(t, err)
 	assert.True(t, N(12).Equal(*v.(*Number)))
+}
+
+func Test_EvalStringWithScope_contexts(t *testing.T) {
+	scope := Scope{
+		"data": Scope{
+			"foo": "foo", "bar": "bar",
+		},
+	}
+	v, err := EvalStringWithScope(`get value( data, "foo" ) + get value( data, "bar" )`, scope)
+	assert.Nil(t, err)
+	assert.Equal(t, "foobar", v)
+}
+
+func Test_EvalStringWithScope_contexts_with_struct(t *testing.T) {
+	type TestItem struct {
+		Key string
+	}
+	scope := Scope{
+		"data": TestItem{Key: "foobar"},
+	}
+	v, err := EvalStringWithScope(`get value( data, "Key" )`, scope)
+	assert.Nil(t, err)
+	assert.Equal(t, "foobar", v)
 }
 
 func TestTemporalValue(t *testing.T) {

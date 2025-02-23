@@ -66,6 +66,14 @@ func Test_builtin_string_functions(t *testing.T) {
 			expr:   `string join(["foo","bar"])`,
 			result: "foobar",
 		},
+		{
+			expr:   `string(123)`,
+			result: "123",
+		},
+		{
+			expr:   `"foo" + "bar"`,
+			result: "foobar",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.expr, func(t *testing.T) {
