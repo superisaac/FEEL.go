@@ -228,8 +228,14 @@ func TestEvalUnaryTests(t *testing.T) {
 	input := `> 8, <= 5`
 	v, err := EvalStringWithScope(input, Scope{"?": 4})
 	assert.Nil(t, err)
-	assert.Nil(t, err)
 	assert.True(t, v.(bool))
+}
+
+func Test_EvalStringWithScope(t *testing.T) {
+	input := `foo + bar`
+	v, err := EvalStringWithScope(input, Scope{"foo": 5, "bar": 7})
+	assert.Nil(t, err)
+	assert.True(t, N(12).Equal(*v.(*Number)))
 }
 
 func TestTemporalValue(t *testing.T) {
