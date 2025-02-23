@@ -8,52 +8,52 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func (self Binop) Eval(intp *Interpreter) (any, error) {
-	switch self.Op {
+func (binop Binop) Eval(intp *Interpreter) (any, error) {
+	switch binop.Op {
 	case "and":
-		return self.andOp(intp)
+		return binop.andOp(intp)
 	case "or":
-		return self.orOp(intp)
+		return binop.orOp(intp)
 	case "+":
-		return self.addOp(intp)
+		return binop.addOp(intp)
 	case "-":
-		return self.subOp(intp)
+		return binop.subOp(intp)
 	case "*":
-		return self.mulOp(intp)
+		return binop.mulOp(intp)
 	case "/":
-		return self.divOp(intp)
+		return binop.divOp(intp)
 	case "%":
-		return self.modOp(intp)
+		return binop.modOp(intp)
 	case ">":
-		return self.compareGTOp(intp)
+		return binop.compareGTOp(intp)
 	case ">=":
-		return self.compareGEOp(intp)
+		return binop.compareGEOp(intp)
 	case "<":
-		return self.compareLTOp(intp)
+		return binop.compareLTOp(intp)
 	case "<=":
-		return self.compareLEOp(intp)
+		return binop.compareLEOp(intp)
 	case "!=":
-		return self.notEqalOp(intp)
+		return binop.notEqalOp(intp)
 	case "[]":
-		return self.indexAtOp(intp)
+		return binop.indexAtOp(intp)
 	case "=":
-		return self.equalOp(intp)
+		return binop.equalOp(intp)
 	case "in":
-		return self.inOp(intp)
+		return binop.inOp(intp)
 	default:
-		return nil, NewEvalError(-3000, "no such binary op", fmt.Sprintf("Binary op %s not exist or not supported", self.Op))
+		return nil, NewEvalError(-3000, "no such binary op", fmt.Sprintf("Binary op %s not exist or not supported", binop.Op))
 	}
 }
 
 type evalNumbers func(a, b *Number) any
 type evalStrings func(a, b string) any
 
-func (self Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) numberOp(intp *Interpreter, en evalNumbers, op string) (any, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -165,24 +165,24 @@ func compareMaps(a, b map[string]any) (int, error) {
 	return 0, nil
 }
 
-func (self Binop) compareValues(intp *Interpreter) (int, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) compareValues(intp *Interpreter) (int, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return 0, err
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return 0, err
 	}
 	return compareInterfaces(leftVal, rightVal)
 }
 
-func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op string) (any, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -217,8 +217,8 @@ func (self Binop) typedOp(intp *Interpreter, es evalStrings, en evalNumbers, op 
 	return nil, NewErrBadOp(typeName(leftVal), op, typeName(rightVal))
 }
 
-func (self Binop) addOp(intp *Interpreter) (any, error) {
-	return self.typedOp(
+func (binop Binop) addOp(intp *Interpreter) (any, error) {
+	return binop.typedOp(
 		intp,
 		func(a, b string) any { return a + b },
 		func(a, b *Number) any { return a.Add(b) },
@@ -226,30 +226,30 @@ func (self Binop) addOp(intp *Interpreter) (any, error) {
 	)
 }
 
-func (self Binop) subOp(intp *Interpreter) (any, error) {
-	return self.typedOp(
+func (binop Binop) subOp(intp *Interpreter) (any, error) {
+	return binop.typedOp(
 		intp,
 		nil,
 		func(a, b *Number) any { return a.Sub(b) },
 		"-")
 }
 
-func (self Binop) mulOp(intp *Interpreter) (any, error) {
-	return self.numberOp(
+func (binop Binop) mulOp(intp *Interpreter) (any, error) {
+	return binop.numberOp(
 		intp,
 		func(a, b *Number) any { return a.Mul(b) },
 		"*")
 }
 
-func (self Binop) divOp(intp *Interpreter) (any, error) {
-	return self.numberOp(
+func (binop Binop) divOp(intp *Interpreter) (any, error) {
+	return binop.numberOp(
 		intp,
 		func(a, b *Number) any { return a.IntDiv(b) },
 		"/")
 }
 
-func (self Binop) compareGTOp(intp *Interpreter) (any, error) {
-	r, err := self.compareValues(intp)
+func (binop Binop) compareGTOp(intp *Interpreter) (any, error) {
+	r, err := binop.compareValues(intp)
 	if err != nil {
 		return false, err
 	} else {
@@ -257,8 +257,8 @@ func (self Binop) compareGTOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) compareGEOp(intp *Interpreter) (any, error) {
-	r, err := self.compareValues(intp)
+func (binop Binop) compareGEOp(intp *Interpreter) (any, error) {
+	r, err := binop.compareValues(intp)
 	if err != nil {
 		return false, err
 	} else {
@@ -266,8 +266,8 @@ func (self Binop) compareGEOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) compareLTOp(intp *Interpreter) (any, error) {
-	r, err := self.compareValues(intp)
+func (binop Binop) compareLTOp(intp *Interpreter) (any, error) {
+	r, err := binop.compareValues(intp)
 	if err != nil {
 		return false, err
 	} else {
@@ -275,8 +275,8 @@ func (self Binop) compareLTOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) compareLEOp(intp *Interpreter) (any, error) {
-	r, err := self.compareValues(intp)
+func (binop Binop) compareLEOp(intp *Interpreter) (any, error) {
+	r, err := binop.compareValues(intp)
 	if err != nil {
 		return false, err
 	} else {
@@ -284,8 +284,8 @@ func (self Binop) compareLEOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) equalOp(intp *Interpreter) (any, error) {
-	r, err := self.compareValues(intp)
+func (binop Binop) equalOp(intp *Interpreter) (any, error) {
+	r, err := binop.compareValues(intp)
 	if err != nil {
 		return false, err
 	} else {
@@ -293,8 +293,8 @@ func (self Binop) equalOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) notEqalOp(intp *Interpreter) (any, error) {
-	r, err := self.compareValues(intp)
+func (binop Binop) notEqalOp(intp *Interpreter) (any, error) {
+	r, err := binop.compareValues(intp)
 	if err != nil {
 		var evalError *EvalError
 		if errors.As(err, &evalError) && evalError.Code == -3106 {
@@ -307,16 +307,16 @@ func (self Binop) notEqalOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) modOp(intp *Interpreter) (any, error) {
-	return self.numberOp(
+func (binop Binop) modOp(intp *Interpreter) (any, error) {
+	return binop.numberOp(
 		intp,
 		func(a, b *Number) any { return a.IntMod(b) },
 		"%")
 }
 
 // circuit break operators
-func (self Binop) andOp(intp *Interpreter) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) andOp(intp *Interpreter) (any, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +324,7 @@ func (self Binop) andOp(intp *Interpreter) (any, error) {
 	if !leftBool {
 		return false, nil
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -332,8 +332,8 @@ func (self Binop) andOp(intp *Interpreter) (any, error) {
 	return rightBool, nil
 }
 
-func (self Binop) orOp(intp *Interpreter) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) orOp(intp *Interpreter) (any, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (self Binop) orOp(intp *Interpreter) (any, error) {
 	if leftBool {
 		return true, nil
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -349,12 +349,12 @@ func (self Binop) orOp(intp *Interpreter) (any, error) {
 	return rightBool, nil
 }
 
-func (self Binop) indexAtOp(intp *Interpreter) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) indexAtOp(intp *Interpreter) (any, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -388,12 +388,12 @@ func (self Binop) indexAtOp(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self Binop) inOp(intp *Interpreter) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (binop Binop) inOp(intp *Interpreter) (any, error) {
+	leftVal, err := binop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
-	rightVal, err := self.Right.Eval(intp)
+	rightVal, err := binop.Right.Eval(intp)
 	if err != nil {
 		return nil, err
 	}

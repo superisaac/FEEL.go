@@ -11,8 +11,8 @@ type EvalError struct {
 	Message string
 }
 
-func (self EvalError) Error() string {
-	return fmt.Sprintf("%d %s, %s", self.Code, self.Short, self.Message)
+func (evalError EvalError) Error() string {
+	return fmt.Sprintf("%d %s, %s", evalError.Code, evalError.Short, evalError.Message)
 }
 
 func NewEvalError(code int, short string, msgs ...string) *EvalError {
@@ -39,7 +39,7 @@ func NewErrValue(msg string) *EvalError {
 	return NewEvalError(-4003, "value error", msg)
 }
 
-// argument errors
+// NewErrKeywordArgument argument errors
 func NewErrKeywordArgument(argName string) *EvalError {
 	return NewEvalError(-4010, "keyword argument required", "require keyword arg", argName)
 }

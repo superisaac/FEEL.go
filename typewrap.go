@@ -1,9 +1,9 @@
 package feel
 
 import (
+	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"reflect"
 )
 

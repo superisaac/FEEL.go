@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/superisaac/FEEL.go"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -26,13 +26,13 @@ func main() {
 			// os.Exit(1)
 			// read from stdin
 			reader := bufio.NewReader(os.Stdin)
-			data, err := ioutil.ReadAll(reader)
+			data, err := io.ReadAll(reader)
 			if err != nil {
 				panic(err)
 			}
 			input = string(data)
 		} else {
-			data, err := ioutil.ReadFile(cliFlags.Args()[0])
+			data, err := os.ReadFile(cliFlags.Args()[0])
 			if err != nil {
 				panic(err)
 			}
