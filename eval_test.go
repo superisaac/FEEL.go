@@ -8,13 +8,21 @@ import (
 	"time"
 )
 
-type evalPair struct {
-	input  string
-	expect any
+func Test_N(t *testing.T) {
+	input := "5 + 6"
+	res, err := EvalString(input)
+	if err != nil {
+		fmt.Printf("bad input %s\n", input)
+	}
+	assert.Nil(t, err)
+	assert.Empty(t, cmp.Diff(N(11), res))
 }
 
-func TestEvalPairs(t *testing.T) {
-	evalPairs := []evalPair{
+func Test_EvalString(t *testing.T) {
+	tests := []struct {
+		input  string
+		expect any
+	}{
 		// empty input outputs nil
 		{"", nil},
 
@@ -204,13 +212,15 @@ func TestEvalPairs(t *testing.T) {
 		{`coincides([1..5], [2..6])`, false},
 	}
 
-	for _, p := range evalPairs {
-		res, err := EvalString(p.input)
-		if err != nil {
-			fmt.Printf("bad input %s\n", p.input)
-		}
-		assert.Nil(t, err)
-		assert.Empty(t, cmp.Diff(p.expect, res))
+	for _, p := range tests {
+		t.Run(fmt.Sprintf("eval: %s", p.input), func(t *testing.T) {
+			res, err := EvalString(p.input)
+			if err != nil {
+				fmt.Printf("bad input %s\n", p.input)
+			}
+			assert.Nil(t, err)
+			assert.Empty(t, cmp.Diff(p.expect, res))
+		})
 	}
 }
 
