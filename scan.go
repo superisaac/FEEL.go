@@ -150,9 +150,7 @@ func NewScanner(input string) *Scanner {
 	}
 }
 
-/**
-* Find all tokens
- */
+// Tokens Find all tokens
 func (scanner *Scanner) Tokens() ([]ScannerToken, error) {
 	err := scanner.Next()
 	if err != nil {

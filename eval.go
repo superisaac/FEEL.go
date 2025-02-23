@@ -101,43 +101,42 @@ func (self Scope) normalizeScope() Scope {
 	return newScp
 }
 
-// intepreter
 func NewIntepreter() *Interpreter {
 	intp := &Interpreter{}
 	intp.PushEmpty()
 	return intp
 }
 
-func (self Interpreter) String() string {
+func (i Interpreter) String() string {
 	return "interpreter"
 }
 
-func (self Interpreter) Len() int {
-	return len(self.ScopeStack)
+func (i Interpreter) Len() int {
+	return len(i.ScopeStack)
 }
 
-func (self *Interpreter) Push(scp Scope) {
-	self.ScopeStack = append(self.ScopeStack, scp.normalizeScope())
+func (i *Interpreter) Push(scp Scope) {
+	i.ScopeStack = append(i.ScopeStack, scp.normalizeScope())
 }
 
-func (self *Interpreter) PushEmpty() {
+func (i *Interpreter) PushEmpty() {
 	vars := make(Scope)
-	self.Push(vars)
+	i.Push(vars)
 }
 
-func (self *Interpreter) Pop() Scope {
-	if self.Len() > 0 {
-		top := self.ScopeStack[len(self.ScopeStack)-1]
-		self.ScopeStack = self.ScopeStack[:len(self.ScopeStack)-1]
+func (i *Interpreter) Pop() Scope {
+	if i.Len() > 0 {
+		top := i.ScopeStack[len(i.ScopeStack)-1]
+		i.ScopeStack = i.ScopeStack[:len(i.ScopeStack)-1]
 		return top
 	}
 	return nil
 }
 
-// resolve a name from the top of scopestack to bottom
-func (self Interpreter) Resolve(name string) (any, bool) {
-	for at := len(self.ScopeStack) - 1; at >= 0; at-- {
-		if v, ok := self.ScopeStack[at][name]; ok {
+// Resolve a name from the top of scopestack to bottom
+func (i Interpreter) Resolve(name string) (any, bool) {
+	for at := len(i.ScopeStack) - 1; at >= 0; at-- {
+		if v, ok := i.ScopeStack[at][name]; ok {
 			return v, true
 		}
 	}
@@ -147,21 +146,21 @@ func (self Interpreter) Resolve(name string) (any, bool) {
 	return nil, false
 }
 
-// resolve the name and set to new value
-func (self Interpreter) Set(name string, value any) bool {
-	for at := len(self.ScopeStack) - 1; at >= 0; at-- {
-		if _, ok := self.ScopeStack[at][name]; ok {
-			self.ScopeStack[at][name] = value
+// Set the name and set to new value
+func (i Interpreter) Set(name string, value any) bool {
+	for at := len(i.ScopeStack) - 1; at >= 0; at-- {
+		if _, ok := i.ScopeStack[at][name]; ok {
+			i.ScopeStack[at][name] = value
 			return true
 		}
 	}
 	return false
 }
 
-// bind the value to the name of current scope
-func (self *Interpreter) Bind(name string, value any) {
-	if self.Len() > 0 {
-		self.ScopeStack[self.Len()-1][name] = normalizeValue(value)
+// Bind the value to the name of current scope
+func (i *Interpreter) Bind(name string, value any) {
+	if i.Len() > 0 {
+		i.ScopeStack[i.Len()-1][name] = normalizeValue(value)
 	} else {
 		panic("empty stack")
 	}
@@ -169,57 +168,57 @@ func (self *Interpreter) Bind(name string, value any) {
 
 // Node's eval functions
 
-// Evaluate Number node
-func (self NumberNode) Eval(intp *Interpreter) (any, error) {
-	return NewNumber(self.Value), nil
+// Eval Evaluate Number node
+func (numberNode NumberNode) Eval(intp *Interpreter) (any, error) {
+	return NewNumber(numberNode.Value), nil
 }
 
-// Evaluate bool node
-func (self BoolNode) Eval(intp *Interpreter) (any, error) {
-	return self.Value, nil
+// Eval Evaluate bool node
+func (boolNode BoolNode) Eval(intp *Interpreter) (any, error) {
+	return boolNode.Value, nil
 }
 
-func (self NullNode) Eval(intp *Interpreter) (any, error) {
+func (nullNode NullNode) Eval(intp *Interpreter) (any, error) {
 	return Null, nil
 }
 
-func (self StringNode) Eval(intp *Interpreter) (any, error) {
-	return self.Content(), nil
+func (stringNode StringNode) Eval(intp *Interpreter) (any, error) {
+	return stringNode.Content(), nil
 }
 
-func (self TemporalNode) Eval(intp *Interpreter) (any, error) {
-	return ParseTemporalValue(self.Content())
+func (tempNode TemporalNode) Eval(intp *Interpreter) (any, error) {
+	return ParseTemporalValue(tempNode.Content())
 }
 
-func (self Var) Eval(intp *Interpreter) (any, error) {
-	if v, ok := intp.Resolve(self.Name); ok {
+func (v Var) Eval(intp *Interpreter) (any, error) {
+	if v, ok := intp.Resolve(v.Name); ok {
 		return v, nil
 	} else {
-		//return nil, NewErrKeyNotFound(self.Name)
+		//return nil, NewErrKeyNotFound(v.Name)
 		return Null, nil
 	}
 }
 
-func (self RangeNode) Eval(intp *Interpreter) (any, error) {
-	startVal, err := self.Start.Eval(intp)
+func (rangeNode RangeNode) Eval(intp *Interpreter) (any, error) {
+	startVal, err := rangeNode.Start.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
-	endVal, err := self.End.Eval(intp)
+	endVal, err := rangeNode.End.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
 	return &RangeValue{
 		Start:     startVal,
-		StartOpen: self.StartOpen,
+		StartOpen: rangeNode.StartOpen,
 		End:       endVal,
-		EndOpen:   self.EndOpen,
+		EndOpen:   rangeNode.EndOpen,
 	}, nil
 }
 
-func (self ArrayNode) Eval(intp *Interpreter) (any, error) {
+func (arrNode ArrayNode) Eval(intp *Interpreter) (any, error) {
 	var arr []any
-	for _, elem := range self.Elements {
+	for _, elem := range arrNode.Elements {
 		v, err := elem.Eval(intp)
 		if err != nil {
 			return nil, err
@@ -229,9 +228,9 @@ func (self ArrayNode) Eval(intp *Interpreter) (any, error) {
 	return arr, nil
 }
 
-func (self ExprList) Eval(intp *Interpreter) (any, error) {
+func (exprList ExprList) Eval(intp *Interpreter) (any, error) {
 	var finalRet any = nil
-	for _, elem := range self.Elements {
+	for _, elem := range exprList.Elements {
 		v, err := elem.Eval(intp)
 		if err != nil {
 			return nil, err
@@ -241,8 +240,8 @@ func (self ExprList) Eval(intp *Interpreter) (any, error) {
 	return finalRet, nil
 }
 
-func (self MultiTests) Eval(intp *Interpreter) (any, error) {
-	for _, elem := range self.Elements {
+func (mt MultiTests) Eval(intp *Interpreter) (any, error) {
+	for _, elem := range mt.Elements {
 		v, err := elem.Eval(intp)
 		if err != nil {
 			return nil, err
@@ -254,9 +253,9 @@ func (self MultiTests) Eval(intp *Interpreter) (any, error) {
 	return false, nil
 }
 
-func (self MapNode) Eval(intp *Interpreter) (any, error) {
+func (mapNode MapNode) Eval(intp *Interpreter) (any, error) {
 	mapVal := make(map[string]any)
-	for _, item := range self.Values {
+	for _, item := range mapNode.Values {
 
 		v, err := item.Value.Eval(intp)
 		if err != nil {
@@ -267,23 +266,23 @@ func (self MapNode) Eval(intp *Interpreter) (any, error) {
 	return mapVal, nil
 }
 
-func (self DotOp) Eval(intp *Interpreter) (any, error) {
-	leftVal, err := self.Left.Eval(intp)
+func (dotop DotOp) Eval(intp *Interpreter) (any, error) {
+	leftVal, err := dotop.Left.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
 	if mapVal, ok := leftVal.(map[string]any); ok {
-		if val, found := mapVal[self.Attr]; found {
+		if val, found := mapVal[dotop.Attr]; found {
 			return val, nil
 		} else {
-			return nil, NewErrKeyNotFound(self.Attr)
+			return nil, NewErrKeyNotFound(dotop.Attr)
 		}
 	} else if obj, ok := leftVal.(HasAttrs); ok {
-		if v, found := obj.GetAttr(self.Attr); found {
+		if v, found := obj.GetAttr(dotop.Attr); found {
 			return normalizeValue(v), nil
 		} else {
-			//return nil, NewEvalError(-4001, "attr error", fmt.Sprintf("cannot get attr %s", self.Attr))
-			return nil, NewErrKeyNotFound(self.Attr)
+			//return nil, NewEvalError(-4001, "attr error", fmt.Sprintf("cannot get attr %s", dotop.Attr))
+			return nil, NewErrKeyNotFound(dotop.Attr)
 
 		}
 	} else {
@@ -292,20 +291,20 @@ func (self DotOp) Eval(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self IfExpr) Eval(intp *Interpreter) (any, error) {
-	condVal, err := self.Cond.Eval(intp)
+func (ifExpr IfExpr) Eval(intp *Interpreter) (any, error) {
+	condVal, err := ifExpr.Cond.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
 
 	if boolValue(condVal) {
-		brVal, err := self.ThenBranch.Eval(intp)
+		brVal, err := ifExpr.ThenBranch.Eval(intp)
 		if err != nil {
 			return nil, err
 		}
 		return brVal, nil
 	} else {
-		brVal, err := self.ElseBranch.Eval(intp)
+		brVal, err := ifExpr.ElseBranch.Eval(intp)
 		if err != nil {
 			return nil, err
 		}
@@ -313,8 +312,8 @@ func (self IfExpr) Eval(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self ForExpr) Eval(intp *Interpreter) (any, error) {
-	listLike, err := self.ListExpr.Eval(intp)
+func (fe ForExpr) Eval(intp *Interpreter) (any, error) {
+	listLike, err := fe.ListExpr.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -323,9 +322,9 @@ func (self ForExpr) Eval(intp *Interpreter) (any, error) {
 		intp.PushEmpty()
 		results := make([]any, 0)
 		for _, val := range aList {
-			intp.Bind(self.Varname, val)
+			intp.Bind(fe.Varname, val)
 
-			res, err := self.ReturnExpr.Eval(intp)
+			res, err := fe.ReturnExpr.Eval(intp)
 			if err != nil {
 				intp.Pop()
 				return nil, err
@@ -339,8 +338,8 @@ func (self ForExpr) Eval(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self SomeExpr) Eval(intp *Interpreter) (any, error) {
-	listLike, err := self.ListExpr.Eval(intp)
+func (sexpr SomeExpr) Eval(intp *Interpreter) (any, error) {
+	listLike, err := sexpr.ListExpr.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -348,9 +347,9 @@ func (self SomeExpr) Eval(intp *Interpreter) (any, error) {
 	if aList, ok := listLike.([]any); ok {
 		intp.PushEmpty()
 		for _, val := range aList {
-			intp.Bind(self.Varname, val)
+			intp.Bind(sexpr.Varname, val)
 
-			res, err := self.FilterExpr.Eval(intp)
+			res, err := sexpr.FilterExpr.Eval(intp)
 			if err != nil {
 				intp.Pop()
 				return nil, err
@@ -366,8 +365,8 @@ func (self SomeExpr) Eval(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self EveryExpr) Eval(intp *Interpreter) (any, error) {
-	listLike, err := self.ListExpr.Eval(intp)
+func (ee EveryExpr) Eval(intp *Interpreter) (any, error) {
+	listLike, err := ee.ListExpr.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
@@ -376,9 +375,9 @@ func (self EveryExpr) Eval(intp *Interpreter) (any, error) {
 		intp.PushEmpty()
 		chooses := make([]any, 0)
 		for _, val := range aList {
-			intp.Bind(self.Varname, val)
+			intp.Bind(ee.Varname, val)
 
-			res, err := self.FilterExpr.Eval(intp)
+			res, err := ee.FilterExpr.Eval(intp)
 			if err != nil {
 				intp.Pop()
 				return nil, err
@@ -395,46 +394,46 @@ func (self EveryExpr) Eval(intp *Interpreter) (any, error) {
 	}
 }
 
-func (self FunDef) Eval(intp *Interpreter) (any, error) {
+func (fd FunDef) Eval(intp *Interpreter) (any, error) {
 	return &FunDef{
-		Args: self.Args,
-		Body: self.Body,
+		Args: fd.Args,
+		Body: fd.Body,
 	}, nil
 }
 
-func (self FunDef) EvalCall(intp *Interpreter, args []any) (any, error) {
-	if len(args) != len(self.Args) {
+func (fd FunDef) EvalCall(intp *Interpreter, args []any) (any, error) {
+	if len(args) != len(fd.Args) {
 		return nil, errors.New("eval call argument size mismatch")
 	}
 	intp.PushEmpty()
 	defer intp.Pop()
-	for i, argName := range self.Args {
+	for i, argName := range fd.Args {
 		intp.Bind(argName, args[i])
 	}
-	return self.Body.Eval(intp)
+	return fd.Body.Eval(intp)
 }
 
-func (self FunCall) Eval(intp *Interpreter) (any, error) {
-	v, err := self.FunRef.Eval(intp)
+func (fc FunCall) Eval(intp *Interpreter) (any, error) {
+	v, err := fc.FunRef.Eval(intp)
 	if err != nil {
 		return nil, err
 	}
 	switch r := v.(type) {
 	case *FunDef:
-		return self.EvalFunDef(intp, r)
+		return fc.EvalFunDef(intp, r)
 	case *NativeFun:
-		return self.EvalNativeFun(intp, r)
+		return fc.EvalNativeFun(intp, r)
 	case *Macro:
-		return self.EvalMacro(intp, r)
+		return fc.EvalMacro(intp, r)
 	default:
 		return nil, NewErrTypeMismatch("function")
 	}
 }
 
-func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, error) {
+func (fc FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, error) {
 	argVals := make(map[string]any)
-	if self.keywordArgs {
-		kwArgMap, err := self.evalArgsToMap(intp)
+	if fc.keywordArgs {
+		kwArgMap, err := fc.evalArgsToMap(intp)
 		if err != nil {
 			return nil, err
 		}
@@ -454,11 +453,11 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, er
 			}
 		}
 	} else {
-		if len(self.Args) < len(funDef.requiredArgNames) {
-			required := funDef.requiredArgNames[len(self.Args):len(funDef.requiredArgNames)]
+		if len(fc.Args) < len(funDef.requiredArgNames) {
+			required := funDef.requiredArgNames[len(fc.Args):len(funDef.requiredArgNames)]
 			return nil, NewErrTooFewArguments(required)
 		}
-		for i, argNode := range self.Args {
+		for i, argNode := range fc.Args {
 			a, err := argNode.arg.Eval(intp)
 			if err != nil {
 				return nil, err
@@ -484,12 +483,12 @@ func (self FunCall) EvalNativeFun(intp *Interpreter, funDef *NativeFun) (any, er
 	return funDef.Call(intp, argVals)
 }
 
-func (self FunCall) evalArgsToMap(intp *Interpreter) (map[string]any, error) {
-	if !self.keywordArgs {
+func (fc FunCall) evalArgsToMap(intp *Interpreter) (map[string]any, error) {
+	if !fc.keywordArgs {
 		return nil, errors.New("funcall has no keyword args")
 	}
 	kwArgMap := make(map[string]any)
-	for _, argNode := range self.Args {
+	for _, argNode := range fc.Args {
 		a, err := argNode.arg.Eval(intp)
 		if err != nil {
 			return nil, err
@@ -499,17 +498,17 @@ func (self FunCall) evalArgsToMap(intp *Interpreter) (map[string]any, error) {
 	return kwArgMap, nil
 }
 
-func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
-	if len(macro.requiredArgNames) > len(self.Args) {
-		return nil, NewErrTooFewArguments(macro.requiredArgNames[len(self.Args):])
+func (fc FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
+	if len(macro.requiredArgNames) > len(fc.Args) {
+		return nil, NewErrTooFewArguments(macro.requiredArgNames[len(fc.Args):])
 		//return nil, NewEvalError(-1005, "number of args of macro mismatch")
 	}
 
 	argNodes := make(map[string]Node)
 	var varArgs []Node
-	if self.keywordArgs {
+	if fc.keywordArgs {
 		kwArgMap := make(map[string]Node)
-		for _, argNode := range self.Args {
+		for _, argNode := range fc.Args {
 			kwArgMap[argNode.argName] = argNode.arg
 		}
 
@@ -528,12 +527,12 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 			}
 		}
 	} else {
-		if len(self.Args) < len(macro.requiredArgNames) {
-			//reqArgs := strings.Join(macro.requiredArgNames[len(self.Args):len(macro.requiredArgNames)], ", ")
+		if len(fc.Args) < len(macro.requiredArgNames) {
+			//reqArgs := strings.Join(macro.requiredArgNames[len(fc.Args):len(macro.requiredArgNames)], ", ")
 			//return nil, NewEvalError(-5003, "too few arguments", fmt.Sprintf("more arguments required: %s", reqArgs))
-			return nil, NewErrTooFewArguments(macro.requiredArgNames[len(self.Args):])
+			return nil, NewErrTooFewArguments(macro.requiredArgNames[len(fc.Args):])
 		}
-		for i, argNode := range self.Args {
+		for i, argNode := range fc.Args {
 			if i < len(macro.requiredArgNames) {
 				argNodes[macro.requiredArgNames[i]] = argNode.arg
 			} else if i < len(macro.requiredArgNames)+len(macro.optionalArgNames) {
@@ -549,19 +548,19 @@ func (self FunCall) EvalMacro(intp *Interpreter, macro *Macro) (any, error) {
 	return macro.fn(intp, argNodes, varArgs)
 }
 
-func (self FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (any, error) {
-	if len(funDef.Args) > len(self.Args) {
+func (fc FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (any, error) {
+	if len(funDef.Args) > len(fc.Args) {
 		//return nil, NewEvalError(-1004, "number of args mismatch")
-		return nil, NewErrTooFewArguments(funDef.Args[len(self.Args):])
-	} else if len(funDef.Args) < len(self.Args) {
+		return nil, NewErrTooFewArguments(funDef.Args[len(fc.Args):])
+	} else if len(funDef.Args) < len(fc.Args) {
 		return nil, NewErrTooManyArguments()
 	}
 	//var args []any
 	intp.PushEmpty()
 	defer intp.Pop()
 
-	if self.keywordArgs {
-		kwArgMap, err := self.evalArgsToMap(intp)
+	if fc.keywordArgs {
+		kwArgMap, err := fc.evalArgsToMap(intp)
 		if err != nil {
 			return nil, err
 		}
@@ -576,7 +575,7 @@ func (self FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (any, error) {
 			}
 		}
 	} else {
-		for i, argNode := range self.Args {
+		for i, argNode := range fc.Args {
 			a, err := argNode.arg.Eval(intp)
 			if err != nil {
 				return nil, err

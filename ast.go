@@ -26,7 +26,7 @@ type TextRange struct {
 	End   ScanPosition
 }
 
-// binary operator
+// Binop binary operator
 type Binop struct {
 	Op    string
 	Left  Node
@@ -35,14 +35,14 @@ type Binop struct {
 	textRange TextRange
 }
 
-func (self Binop) TextRange() TextRange {
-	return self.textRange
+func (binop Binop) TextRange() TextRange {
+	return binop.textRange
 }
-func (self Binop) Repr() string {
-	return fmt.Sprintf("(%s %s %s)", self.Op, self.Left.Repr(), self.Right.Repr())
+func (binop Binop) Repr() string {
+	return fmt.Sprintf("(%s %s %s)", binop.Op, binop.Left.Repr(), binop.Right.Repr())
 }
 
-// function call
+// DotOp function call
 type DotOp struct {
 	Left Node
 	Attr string
@@ -50,12 +50,12 @@ type DotOp struct {
 	textRange TextRange
 }
 
-func (self DotOp) TextRange() TextRange {
-	return self.textRange
+func (dotop DotOp) TextRange() TextRange {
+	return dotop.textRange
 }
 
-func (self DotOp) Repr() string {
-	return fmt.Sprintf("(. %s %s)", self.Left.Repr(), self.Attr)
+func (dotop DotOp) Repr() string {
+	return fmt.Sprintf("(. %s %s)", dotop.Left.Repr(), dotop.Attr)
 }
 
 // function call
@@ -72,25 +72,25 @@ type FunCall struct {
 	textRange TextRange
 }
 
-func (self FunCall) TextRange() TextRange {
-	return self.textRange
+func (fc FunCall) TextRange() TextRange {
+	return fc.textRange
 }
-func (self FunCall) Repr() string {
+func (fc FunCall) Repr() string {
 	argReprs := make([]string, 0)
-	if self.keywordArgs {
-		for _, arg := range self.Args {
+	if fc.keywordArgs {
+		for _, arg := range fc.Args {
 			s := fmt.Sprintf("(%s %s)", arg.argName, arg.arg.Repr())
 			argReprs = append(argReprs, s)
 		}
 	} else {
-		for _, arg := range self.Args {
+		for _, arg := range fc.Args {
 			argReprs = append(argReprs, arg.arg.Repr())
 		}
 	}
-	return fmt.Sprintf("(call %s [%s])", self.FunRef.Repr(), strings.Join(argReprs, ", "))
+	return fmt.Sprintf("(call %s [%s])", fc.FunRef.Repr(), strings.Join(argReprs, ", "))
 }
 
-// function definition
+// FunDef function definition
 type FunDef struct {
 	Args []string
 	Body Node
@@ -98,100 +98,92 @@ type FunDef struct {
 	textRange TextRange
 }
 
-func (self FunDef) TextRange() TextRange {
-	return self.textRange
+func (fd FunDef) TextRange() TextRange {
+	return fd.textRange
 }
 
-func (self FunDef) Repr() string {
-	return fmt.Sprintf("(function [%s] %s)", strings.Join(self.Args, ", "), self.Body.Repr())
+func (fd FunDef) Repr() string {
+	return fmt.Sprintf("(function [%s] %s)", strings.Join(fd.Args, ", "), fd.Body.Repr())
 }
 
-// variable
+// Var variable
 type Var struct {
 	Name      string
 	textRange TextRange
 }
 
-func (self Var) TextRange() TextRange {
-	return self.textRange
+func (v Var) TextRange() TextRange {
+	return v.textRange
 }
 
-func (self Var) Repr() string {
-	if strings.Contains(self.Name, " ") {
-		return fmt.Sprintf("`%s`", self.Name)
+func (v Var) Repr() string {
+	if strings.Contains(v.Name, " ") {
+		return fmt.Sprintf("`%s`", v.Name)
 	}
-	return self.Name
+	return v.Name
 }
 
-// number
 type NumberNode struct {
 	Value string
 
 	textRange TextRange
 }
 
-func (self NumberNode) TextRange() TextRange {
-	return self.textRange
+func (numberNode NumberNode) TextRange() TextRange {
+	return numberNode.textRange
+}
+func (numberNode NumberNode) Repr() string {
+	return numberNode.Value
 }
 
-func (self NumberNode) Repr() string {
-	return self.Value
-}
-
-// bool
 type BoolNode struct {
 	Value bool
 
 	textRange TextRange
 }
 
-func (self BoolNode) TextRange() TextRange {
-	return self.textRange
+func (boolNode BoolNode) TextRange() TextRange {
+	return boolNode.textRange
 }
-func (self BoolNode) Repr() string {
-	if self.Value {
+func (boolNode BoolNode) Repr() string {
+	if boolNode.Value {
 		return "true"
 	} else {
 		return "false"
 	}
 }
 
-// null
 type NullNode struct {
 	textRange TextRange
 }
 
-func (self NullNode) Repr() string {
+func (nullNode NullNode) Repr() string {
 	return "null"
 }
-
-func (self NullNode) TextRange() TextRange {
-	return self.textRange
+func (nullNode NullNode) TextRange() TextRange {
+	return nullNode.textRange
 }
 
-// string
 type StringNode struct {
 	Value string
 
 	textRange TextRange
 }
 
-func (self StringNode) Repr() string {
-	return self.Value
+func (stringNode StringNode) Repr() string {
+	return stringNode.Value
 }
-func (self StringNode) TextRange() TextRange {
-	return self.textRange
+func (stringNode StringNode) TextRange() TextRange {
+	return stringNode.textRange
 }
-func (self StringNode) Content() string {
+func (stringNode StringNode) Content() string {
 	// trim leading and trailing quotes
-	s := self.Value[1 : len(self.Value)-1]
+	s := stringNode.Value[1 : len(stringNode.Value)-1]
 
 	s = strings.ReplaceAll(s, "\\n", "\n")
 	s = strings.ReplaceAll(s, "\\\"", "\"")
 	return s
 }
-
-// Map
 
 type mapItem struct {
 	Name  string
@@ -204,36 +196,34 @@ type MapNode struct {
 	textRange TextRange
 }
 
-func (self MapNode) TextRange() TextRange {
-	return self.textRange
+func (mapNode MapNode) TextRange() TextRange {
+	return mapNode.textRange
 }
-func (self MapNode) Repr() string {
+func (mapNode MapNode) Repr() string {
 	var ss []string
-	for _, item := range self.Values {
+	for _, item := range mapNode.Values {
 		s := fmt.Sprintf("(\"%s\" %s)", item.Name, item.Value.Repr())
 		ss = append(ss, s)
 	}
 	return fmt.Sprintf("(map %s)", strings.Join(ss, " "))
 }
 
-// temporal
 type TemporalNode struct {
 	Value     string
 	textRange TextRange
 }
 
-func (self TemporalNode) TextRange() TextRange {
-	return self.textRange
+func (tempNode TemporalNode) TextRange() TextRange {
+	return tempNode.textRange
 }
-func (self TemporalNode) Repr() string {
-	return self.Value
-}
-
-func (self TemporalNode) Content() string {
-	return self.Value[2 : len(self.Value)-1]
+func (tempNode TemporalNode) Repr() string {
+	return tempNode.Value
 }
 
-// range
+func (tempNode TemporalNode) Content() string {
+	return tempNode.Value[2 : len(tempNode.Value)-1]
+}
+
 type RangeNode struct {
 	StartOpen bool
 	Start     Node
@@ -244,22 +234,21 @@ type RangeNode struct {
 	textRange TextRange
 }
 
-func (self RangeNode) TextRange() TextRange {
-	return self.textRange
+func (rangeNode RangeNode) TextRange() TextRange {
+	return rangeNode.textRange
 }
-func (self RangeNode) Repr() string {
+func (rangeNode RangeNode) Repr() string {
 	startQuote := "["
-	if self.StartOpen {
+	if rangeNode.StartOpen {
 		startQuote = "("
 	}
 	endQuote := "]"
-	if self.EndOpen {
+	if rangeNode.EndOpen {
 		endQuote = ")"
 	}
-	return fmt.Sprintf("%s%s..%s%s", startQuote, self.Start.Repr(), self.End.Repr(), endQuote)
+	return fmt.Sprintf("%s%s..%s%s", startQuote, rangeNode.Start.Repr(), rangeNode.End.Repr(), endQuote)
 }
 
-// if expression
 type IfExpr struct {
 	Cond       Node
 	ThenBranch Node
@@ -268,67 +257,63 @@ type IfExpr struct {
 	textRange TextRange
 }
 
-func (self IfExpr) TextRange() TextRange {
-	return self.textRange
+func (ifExpr IfExpr) TextRange() TextRange {
+	return ifExpr.textRange
 }
-func (self IfExpr) Repr() string {
-	return fmt.Sprintf("(if %s %s %s)", self.Cond.Repr(), self.ThenBranch.Repr(), self.ElseBranch.Repr())
+func (ifExpr IfExpr) Repr() string {
+	return fmt.Sprintf("(if %s %s %s)", ifExpr.Cond.Repr(), ifExpr.ThenBranch.Repr(), ifExpr.ElseBranch.Repr())
 }
 
-// array
 type ArrayNode struct {
-	Elements []Node
-
+	Elements  []Node
 	textRange TextRange
 }
 
-func (self ArrayNode) TextRange() TextRange {
-	return self.textRange
+func (arrNode ArrayNode) TextRange() TextRange {
+	return arrNode.textRange
 }
-func (self ArrayNode) Repr() string {
+func (arrNode ArrayNode) Repr() string {
 	s := make([]string, 0)
-	for _, elem := range self.Elements {
+	for _, elem := range arrNode.Elements {
 		s = append(s, elem.Repr())
 	}
 	return fmt.Sprintf("[%s]", strings.Join(s, ", "))
 }
 
-// ExpressList
+// ExprList Expression List
 type ExprList struct {
-	Elements []Node
-
+	Elements  []Node
 	textRange TextRange
 }
 
-func (self ExprList) TextRange() TextRange {
-	return self.textRange
+func (exprList ExprList) TextRange() TextRange {
+	return exprList.textRange
 }
-func (self ExprList) Repr() string {
+func (exprList ExprList) Repr() string {
 	s := make([]string, 0)
-	for _, elem := range self.Elements {
+	for _, elem := range exprList.Elements {
 		s = append(s, elem.Repr())
 	}
 	return fmt.Sprintf("(explist %s)", strings.Join(s, " "))
 }
 
-// MultiTests
 type MultiTests struct {
 	Elements  []Node
 	textRange TextRange
 }
 
-func (self MultiTests) TextRange() TextRange {
-	return self.textRange
+func (mt MultiTests) TextRange() TextRange {
+	return mt.textRange
 }
-func (self MultiTests) Repr() string {
+func (mt MultiTests) Repr() string {
 	s := make([]string, 0)
-	for _, elem := range self.Elements {
+	for _, elem := range mt.Elements {
 		s = append(s, elem.Repr())
 	}
 	return fmt.Sprintf("(multitests %s)", strings.Join(s, " "))
 }
 
-// For expression
+// ForExpr FOR expression
 type ForExpr struct {
 	Varname    string
 	ListExpr   Node
@@ -336,14 +321,14 @@ type ForExpr struct {
 	textRange  TextRange
 }
 
-func (self ForExpr) TextRange() TextRange {
-	return self.textRange
+func (fe ForExpr) TextRange() TextRange {
+	return fe.textRange
 }
-func (self ForExpr) Repr() string {
-	return fmt.Sprintf("(for %s %s %s)", self.Varname, self.ListExpr.Repr(), self.ReturnExpr.Repr())
+func (fe ForExpr) Repr() string {
+	return fmt.Sprintf("(for %s %s %s)", fe.Varname, fe.ListExpr.Repr(), fe.ReturnExpr.Repr())
 }
 
-// Some expression
+// SomeExpr some expression
 type SomeExpr struct {
 	Varname    string
 	ListExpr   Node
@@ -351,14 +336,14 @@ type SomeExpr struct {
 	textRange  TextRange
 }
 
-func (self SomeExpr) TextRange() TextRange {
-	return self.textRange
+func (sexpr SomeExpr) TextRange() TextRange {
+	return sexpr.textRange
 }
-func (self SomeExpr) Repr() string {
-	return fmt.Sprintf("(some \"%s\" %s %s)", self.Varname, self.ListExpr.Repr(), self.FilterExpr.Repr())
+func (sexpr SomeExpr) Repr() string {
+	return fmt.Sprintf("(some \"%s\" %s %s)", sexpr.Varname, sexpr.ListExpr.Repr(), sexpr.FilterExpr.Repr())
 }
 
-// Every expression
+// EveryExpr Every expression
 type EveryExpr struct {
 	Varname    string
 	ListExpr   Node
@@ -367,9 +352,9 @@ type EveryExpr struct {
 	textRange TextRange
 }
 
-func (self EveryExpr) TextRange() TextRange {
-	return self.textRange
+func (ee EveryExpr) TextRange() TextRange {
+	return ee.textRange
 }
-func (self EveryExpr) Repr() string {
-	return fmt.Sprintf("(every \"%s\" %s %s)", self.Varname, self.ListExpr.Repr(), self.FilterExpr.Repr())
+func (ee EveryExpr) Repr() string {
+	return fmt.Sprintf("(every \"%s\" %s %s)", ee.Varname, ee.ListExpr.Repr(), ee.FilterExpr.Repr())
 }

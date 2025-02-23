@@ -41,14 +41,6 @@ func contextProbePut(ctx map[string]any, keys []string) bool {
 	return false
 }
 
-func contextCopy(ctx map[string]any) map[string]any {
-	newCtx := make(map[string]any)
-	for k, v := range ctx {
-		newCtx[k] = v
-	}
-	return newCtx
-}
-
 func contextPutKeys(ctx map[string]any, keys []string, value any) (map[string]any, bool) {
 	if !contextProbePut(ctx, keys) {
 		// cannot put keys

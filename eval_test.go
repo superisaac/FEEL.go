@@ -2,20 +2,27 @@ package feel
 
 import (
 	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-
-	"gotest.tools/assert"
 )
 
-type evalPair struct {
-	input  string
-	expect any
+func Test_N(t *testing.T) {
+	input := "5 + 6"
+	res, err := EvalString(input)
+	if err != nil {
+		fmt.Printf("bad input %s\n", input)
+	}
+	assert.Nil(t, err)
+	assert.Empty(t, cmp.Diff(N(11), res))
 }
 
-func TestEvalPairs(t *testing.T) {
-	//assert0 := assert.New(t)
-	evalPairs := []evalPair{
+func Test_EvalString(t *testing.T) {
+	tests := []struct {
+		input  string
+		expect any
+	}{
 		// empty input outputs nil
 		{"", nil},
 
@@ -205,61 +212,93 @@ func TestEvalPairs(t *testing.T) {
 		{`coincides([1..5], [2..6])`, false},
 	}
 
-	for _, p := range evalPairs {
-		res, err := EvalString(p.input)
-		if err != nil {
-			fmt.Printf("bad input %s\n", p.input)
-		}
-		assert.NilError(t, err)
-		assert.DeepEqual(t, p.expect, res)
+	for _, p := range tests {
+		t.Run(fmt.Sprintf("eval: %s", p.input), func(t *testing.T) {
+			res, err := EvalString(p.input)
+			if err != nil {
+				fmt.Printf("bad input %s\n", p.input)
+			}
+			assert.Nil(t, err)
+			assert.Empty(t, cmp.Diff(p.expect, res))
+		})
 	}
 }
 
-func TestEvalUnaryTests(t *testing.T) {
+func Test_EvalStringWithScope_unary_with_default_scope(t *testing.T) {
 	input := `> 8, <= 5`
 	v, err := EvalStringWithScope(input, Scope{"?": 4})
-	assert.NilError(t, err)
-	assert.Equal(t, v, true)
+	assert.Nil(t, err)
+	assert.True(t, v.(bool))
+}
+
+func Test_EvalStringWithScope(t *testing.T) {
+	input := `foo + bar`
+	v, err := EvalStringWithScope(input, Scope{"foo": 5, "bar": 7})
+	assert.Nil(t, err)
+	assert.True(t, N(12).Equal(*v.(*Number)))
+}
+
+func Test_EvalStringWithScope_contexts(t *testing.T) {
+	scope := Scope{
+		"data": Scope{
+			"foo": "foo", "bar": "bar",
+		},
+	}
+	v, err := EvalStringWithScope(`get value( data, "foo" ) + get value( data, "bar" )`, scope)
+	assert.Nil(t, err)
+	assert.Equal(t, "foobar", v)
+}
+
+func Test_EvalStringWithScope_contexts_with_struct(t *testing.T) {
+	type TestItem struct {
+		Key string
+	}
+	scope := Scope{
+		"data": TestItem{Key: "foobar"},
+	}
+	v, err := EvalStringWithScope(`get value( data, "Key" )`, scope)
+	assert.Nil(t, err)
+	assert.Equal(t, "foobar", v)
 }
 
 func TestTemporalValue(t *testing.T) {
 	input := `@"2023-06-07".day`
 	v, err := EvalString(input)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, v, N(7))
+	assert.Nil(t, err)
+	assert.Empty(t, cmp.Diff(v, N(7)))
 
 	input1 := `@"2023-06-07T15:08:39".second`
 	v1, err := EvalString(input1)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, v1, N(39))
+	assert.Nil(t, err)
+	assert.Empty(t, cmp.Diff(v1, N(39)))
 
 	input2 := `@"P1DT3H25M60S".minutes`
 	v2, err := EvalString(input2)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, v2, N(25))
+	assert.Nil(t, err)
+	assert.Empty(t, cmp.Diff(v2, N(25)))
 
 	dt, err := ParseDatetime(`2023-06-07T15:04:05`)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, dt.t.Hour(), 15)
-	assert.DeepEqual(t, dt.t.Second(), 5)
+	assert.Nil(t, err)
+	assert.Empty(t, cmp.Diff(dt.t.Hour(), 15))
+	assert.Empty(t, cmp.Diff(dt.t.Second(), 5))
 
 	dur, err := ParseDuration("P12Y2M")
-	assert.NilError(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, 12, dur.Years)
 	assert.Equal(t, 2, dur.Months)
 
 	dur1, err := ParseDuration("P7M")
-	assert.NilError(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, 0, dur1.Years)
 	assert.Equal(t, 7, dur1.Months)
 
 	dur2, err := ParseDuration("PT20H")
-	assert.NilError(t, err)
+	assert.Nil(t, err)
 	assert.Equal(t, 20, dur2.Hours)
 	assert.Equal(t, 0, dur2.Seconds)
 
 	td, err := time.ParseDuration("3h37m20s")
-	assert.NilError(t, err)
+	assert.Nil(t, err)
 	dur3 := NewFEELDuration(td)
 	assert.Equal(t, 3, dur3.Hours)
 	assert.Equal(t, 37, dur3.Minutes)

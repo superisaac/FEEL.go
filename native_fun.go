@@ -5,7 +5,6 @@ import (
 	"sync"
 )
 
-// arg type error
 type ArgTypeError struct {
 	index  int
 	expect string
@@ -15,7 +14,6 @@ func (self ArgTypeError) Error() string {
 	return fmt.Sprintf("type error at %d, expect %s", self.index, self.expect)
 }
 
-// ArgSizeError
 type ArgSizeError struct {
 	has    int
 	expect int
@@ -25,7 +23,7 @@ func (self ArgSizeError) Error() string {
 	return fmt.Sprintf("argument size error, has %d, expect %d", self.has, self.expect)
 }
 
-// native function
+// NativeFunDef native function
 type NativeFunDef func(args map[string]interface{}) (interface{}, error)
 
 type NativeFun struct {
@@ -40,44 +38,43 @@ func NewNativeFunc(fn NativeFunDef) *NativeFun {
 	return &NativeFun{fn: fn}
 }
 
-func (self *NativeFun) Required(argNames ...string) *NativeFun {
-	self.requiredArgNames = append(self.requiredArgNames, argNames...)
-	return self
+func (nativeFun *NativeFun) Required(argNames ...string) *NativeFun {
+	nativeFun.requiredArgNames = append(nativeFun.requiredArgNames, argNames...)
+	return nativeFun
 }
 
-func (self *NativeFun) Optional(argNames ...string) *NativeFun {
-	self.optionalArgNames = append(self.optionalArgNames, argNames...)
-	return self
+func (nativeFun *NativeFun) Optional(argNames ...string) *NativeFun {
+	nativeFun.optionalArgNames = append(nativeFun.optionalArgNames, argNames...)
+	return nativeFun
 }
 
-func (self *NativeFun) Vararg(argName string) *NativeFun {
-	self.varArgName = argName
-	return self
+func (nativeFun *NativeFun) Vararg(argName string) *NativeFun {
+	nativeFun.varArgName = argName
+	return nativeFun
 }
 
-func (self *NativeFun) Help(help string) *NativeFun {
-	self.help = help
-	return self
+func (nativeFun *NativeFun) Help(help string) *NativeFun {
+	nativeFun.help = help
+	return nativeFun
 }
 
-func (self NativeFun) ArgNameAt(at int) (string, bool) {
-	if at >= 0 && at < len(self.requiredArgNames) {
-		return self.requiredArgNames[at], true
-	} else if at >= len(self.requiredArgNames) && at < len(self.requiredArgNames)+len(self.optionalArgNames) {
-		return self.optionalArgNames[at-len(self.requiredArgNames)], true
+func (nativeFun NativeFun) ArgNameAt(at int) (string, bool) {
+	if at >= 0 && at < len(nativeFun.requiredArgNames) {
+		return nativeFun.requiredArgNames[at], true
+	} else if at >= len(nativeFun.requiredArgNames) && at < len(nativeFun.requiredArgNames)+len(nativeFun.optionalArgNames) {
+		return nativeFun.optionalArgNames[at-len(nativeFun.requiredArgNames)], true
 	}
 	return "", false
 }
 
-func (self *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (interface{}, error) {
-	v, err := self.fn(args)
+func (nativeFun *NativeFun) Call(intp *Interpreter, args map[string]interface{}) (interface{}, error) {
+	v, err := nativeFun.fn(args)
 	if err != nil {
 		return nil, err
 	}
 	return normalizeValue(v), nil
 }
 
-// macro
 type MacroDef func(intp *Interpreter, args map[string]Node, varArgs []Node) (interface{}, error)
 type Macro struct {
 	fn               MacroDef
@@ -109,7 +106,6 @@ func (self *Macro) Help(help string) *Macro {
 	return self
 }
 
-// Prelude
 type Prelude struct {
 	vars map[string]interface{}
 }
@@ -210,10 +206,4 @@ func (self *Prelude) Bind(name string, value interface{}) *Prelude {
 func (self *Prelude) Resolve(name string) (interface{}, bool) {
 	v, ok := self.vars[name]
 	return v, ok
-}
-
-// buildin native funcs
-func nativeBind(intp *Interpreter, varname string, value interface{}) (interface{}, error) {
-	intp.Bind(varname, value)
-	return nil, nil
 }

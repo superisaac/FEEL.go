@@ -62,45 +62,45 @@ func N(v interface{}) *Number {
 	return n
 }
 
-func (self Number) Int64() int64 {
-	i64v, _ := self.v.Int64()
+func (n Number) Int64() int64 {
+	i64v, _ := n.v.Int64()
 	return i64v
 }
 
-func (self Number) Int() int {
-	return int(self.Int64())
+func (n Number) Int() int {
+	return int(n.Int64())
 }
 
-func (self Number) Float64() float64 {
-	f64v, _ := self.v.Float64()
+func (n Number) Float64() float64 {
+	f64v, _ := n.v.Float64()
 	return f64v
 }
 
-func (self *Number) Add(other *Number) *Number {
+func (n *Number) Add(other *Number) *Number {
 	newv := new(big.Float)
-	newv.SetPrec(Prec).Add(self.v, other.v)
+	newv.SetPrec(Prec).Add(n.v, other.v)
 	return &Number{v: newv}
 }
 
-func (self *Number) Sub(other *Number) *Number {
+func (n *Number) Sub(other *Number) *Number {
 	newv := new(big.Float)
-	newv.SetPrec(Prec).Sub(self.v, other.v)
+	newv.SetPrec(Prec).Sub(n.v, other.v)
 	return &Number{v: newv}
 }
 
-func (self *Number) Mul(other *Number) *Number {
+func (n *Number) Mul(other *Number) *Number {
 	newv := new(big.Float)
-	newv.SetPrec(Prec).Mul(self.v, other.v)
+	newv.SetPrec(Prec).Mul(n.v, other.v)
 	return &Number{v: newv}
 }
 
-func (self *Number) Cmp(other *Number) int {
-	return self.v.Cmp(other.v)
+func (n *Number) Cmp(other *Number) int {
+	return n.v.Cmp(other.v)
 }
 
-func (self *Number) IntDiv(other *Number) *Number {
+func (n *Number) IntDiv(other *Number) *Number {
 	newv := new(big.Int)
-	a, _ := self.v.Int(nil)
+	a, _ := n.v.Int(nil)
 	b, _ := other.v.Int(nil)
 	newv.Div(a, b)
 	newf := new(big.Float)
@@ -108,17 +108,17 @@ func (self *Number) IntDiv(other *Number) *Number {
 	return &Number{v: newf}
 }
 
-func (self *Number) FloatDiv(other *Number) *Number {
-	a, _ := self.v.Float64()
+func (n *Number) FloatDiv(other *Number) *Number {
+	a, _ := n.v.Float64()
 	b, _ := other.v.Float64()
 	newf := new(big.Float)
 	newf.SetPrec(Prec).SetFloat64(a / b)
 	return &Number{v: newf}
 }
 
-func (self *Number) IntMod(other *Number) *Number {
+func (n *Number) IntMod(other *Number) *Number {
 	newv := new(big.Int)
-	a, _ := self.v.Int(nil)
+	a, _ := n.v.Int(nil)
 	b, _ := other.v.Int(nil)
 	newv.Mod(a, b)
 	newf := new(big.Float)
@@ -126,24 +126,24 @@ func (self *Number) IntMod(other *Number) *Number {
 	return &Number{v: newf}
 }
 
-func (self Number) Equal(other Number) bool {
-	return self.Compare(other) == 0
+func (n Number) Equal(other Number) bool {
+	return n.Compare(other) == 0
 }
 
-func (self Number) Compare(other Number) int {
-	return self.v.Cmp(other.v)
+func (n Number) Compare(other Number) int {
+	return n.v.Cmp(other.v)
 }
 
-func (self Number) String() string {
-	//return self.v.String()
-	return self.v.Text('f', 18)
+func (n Number) String() string {
+	//return n.v.String()
+	return n.v.Text('f', 18)
 }
 
-func (self Number) MarshalJSON() ([]byte, error) {
-	if f32v, acc := self.v.Float32(); acc == big.Exact {
+func (n Number) MarshalJSON() ([]byte, error) {
+	if f32v, acc := n.v.Float32(); acc == big.Exact {
 		return json.Marshal(f32v)
 	}
-	return json.Marshal(self.String())
+	return json.Marshal(n.String())
 }
 
 var Zero = N(0)

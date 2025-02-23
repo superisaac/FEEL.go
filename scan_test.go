@@ -8,8 +8,6 @@ import (
 )
 
 func TestSimpleScannerFinding(t *testing.T) {
-	assert := assert.New(t)
-
 	input := `
 	< alice + bob 
 	// single line comment
@@ -28,52 +26,50 @@ func TestSimpleScannerFinding(t *testing.T) {
 
 	scanner := NewScanner(input)
 	tokens, err := scanner.Tokens()
-	assert.Nil(err)
+	assert.Nil(t, err)
 	// tokens is ["<", "name", "+", "name"]
-	assert.Equal("<", tokens[0].Kind)
+	assert.Equal(t, "<", tokens[0].Kind)
 
-	assert.Equal("name", tokens[1].Kind)
-	assert.Equal("alice", tokens[1].Value)
+	assert.Equal(t, "name", tokens[1].Kind)
+	assert.Equal(t, "alice", tokens[1].Value)
 
-	assert.Equal("+", tokens[2].Kind)
+	assert.Equal(t, "+", tokens[2].Kind)
 
-	assert.Equal("name", tokens[3].Kind)
-	assert.Equal("bob", tokens[3].Value)
+	assert.Equal(t, "name", tokens[3].Kind)
+	assert.Equal(t, "bob", tokens[3].Value)
 
-	assert.Equal("+", tokens[4].Kind)
+	assert.Equal(t, "+", tokens[4].Kind)
 
-	assert.Equal("string", tokens[5].Kind)
-	assert.Equal(`"op\nq"`, tokens[5].Value)
-	assert.Equal(7, len(tokens[5].Value))
+	assert.Equal(t, "string", tokens[5].Kind)
+	assert.Equal(t, `"op\nq"`, tokens[5].Value)
+	assert.Equal(t, 7, len(tokens[5].Value))
 
-	assert.Equal("*", tokens[6].Kind)
+	assert.Equal(t, "*", tokens[6].Kind)
 
-	assert.Equal("keyword", tokens[7].Kind)
-	assert.Equal("true", tokens[7].Value)
+	assert.Equal(t, "keyword", tokens[7].Kind)
+	assert.Equal(t, "true", tokens[7].Value)
 
-	assert.Equal("(", tokens[8].Kind)
+	assert.Equal(t, "(", tokens[8].Kind)
 
-	assert.Equal("name", tokens[9].Kind)
-	assert.Equal("haha", tokens[9].Value)
+	assert.Equal(t, "name", tokens[9].Kind)
+	assert.Equal(t, "haha", tokens[9].Value)
 
-	assert.Equal(")", tokens[10].Kind)
+	assert.Equal(t, ")", tokens[10].Kind)
 
-	assert.Equal("string", tokens[12].Kind)
-	assert.Equal("\"multiline\n\tstring中文\"", tokens[12].Value)
+	assert.Equal(t, "string", tokens[12].Kind)
+	assert.Equal(t, "\"multiline\n\tstring中文\"", tokens[12].Value)
 
-	assert.Equal("name", tokens[13].Kind)
-	assert.Equal("中文变量andγβ", tokens[13].Value)
+	assert.Equal(t, "name", tokens[13].Kind)
+	assert.Equal(t, "中文变量andγβ", tokens[13].Value)
 
 	// test against position
-	assert.Equal(14, scanner.Pos.Row)
-	assert.Equal(1, scanner.Pos.Column)
+	assert.Equal(t, 14, scanner.Pos.Row)
+	assert.Equal(t, 1, scanner.Pos.Column)
 }
 
 func TestUnicodeRegexp(t *testing.T) {
-	assert := assert.New(t)
-
 	reName := regexp.MustCompile(`\p{Han}+`)
 
 	found := reName.FindString("abc(汉字)")
-	assert.Equal("汉字", found)
+	assert.Equal(t, "汉字", found)
 }

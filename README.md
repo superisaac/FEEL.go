@@ -10,7 +10,16 @@ interpreter.
 * run `make build` to build feel interpreter bin/feel
 * run `make test` to run testing
 
-## Examples
+## Use in golang applications
+```golang
+import (
+  feel "github.com/superisaac/FEEL.go"
+)
+
+res, err := feel.EvalString("5 + 7")
+```
+
+## Examples, with using the CLI tool
 ```shell
 
 % bin/feel -c '"hello " + "world"'
@@ -31,16 +40,4 @@ interpreter.
   4,
   8
 ]
-```
-
-for more examples please refer to testing
-
-## Use in golang codes
-```golang
-import (
-  feel "github.com/superisaac/FEEL.go"
-)
-
-res, err := feel.EvalString(input)
-
 ```
