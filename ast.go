@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type Scope map[string]interface{}
+type Scope map[string]any
 
 type Interpreter struct {
 	ScopeStack []Scope
@@ -13,12 +13,12 @@ type Interpreter struct {
 
 type Node interface {
 	Repr() string
-	Eval(*Interpreter) (interface{}, error)
+	Eval(*Interpreter) (any, error)
 	TextRange() TextRange
 }
 
 type HasAttrs interface {
-	GetAttr(name string) (interface{}, bool)
+	GetAttr(name string) (any, bool)
 }
 
 type TextRange struct {

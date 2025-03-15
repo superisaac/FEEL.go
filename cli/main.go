@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/superisaac/FEEL.go"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -14,6 +14,7 @@ func main() {
 	cliFlags := flag.NewFlagSet("feel", flag.ExitOnError)
 
 	pCmdStr := cliFlags.String("c", "", "feel script as string")
+	pVarsStr := cliFlags.String("vars", "", "context vars")
 	pDumpAST := cliFlags.Bool("ast", false, "dump ast tree only")
 
 	cliFlags.Parse(os.Args[1:])
@@ -26,13 +27,13 @@ func main() {
 			// os.Exit(1)
 			// read from stdin
 			reader := bufio.NewReader(os.Stdin)
-			data, err := ioutil.ReadAll(reader)
+			data, err := io.ReadAll(reader)
 			if err != nil {
 				panic(err)
 			}
 			input = string(data)
 		} else {
-			data, err := ioutil.ReadFile(cliFlags.Args()[0])
+			data, err := os.ReadFile(cliFlags.Args()[0])
 			if err != nil {
 				panic(err)
 			}
@@ -48,7 +49,7 @@ func main() {
 		}
 		fmt.Println(ast.Repr())
 	} else {
-		res, err := feel.EvalString(input)
+		res, err := feel.EvalString(input, *pVarsStr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "eval error, %s\n", err)
 			os.Exit(1)

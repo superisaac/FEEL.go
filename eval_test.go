@@ -9,204 +9,203 @@ import (
 )
 
 type evalPair struct {
-	input  string
-	expect any
+	input   string
+	expect  any
+	context string
 }
 
 func TestEvalPairs(t *testing.T) {
 	//assert0 := assert.New(t)
 	evalPairs := []evalPair{
 		// empty input outputs nil
-		{"", nil},
+		{"", nil, ""},
 
-		{"5 + -6", N(-1)},
-		{"5 + 6", N(11)},
-		{"(function(a) 2 * a)(5)", N(10)},
-		{"true", true},
-		{"false", false},
-		{`"hello" + " world"`, "hello world"},
+		{"5 + -6", N(-1), ""},
+		{"5 + 6", N(11), ""},
+		{"(function(a) 2 * a)(5)", N(10), ""},
+		{"true", true, ""},
+		{"false", false, ""},
+		{`"hello" + " world"`, "hello world", ""},
 
-		{`{a if c: "hello", b: "world"}`, map[string]any{"a if c": "hello", "b": "world"}},
+		{`{a if c: "hello", b: "world"}`, map[string]any{"a if c": "hello", "b": "world"}, ""},
 
 		// in range and array
-		{`5 in (5..8]`, false},
-		{`5 in [5..8)`, true},
-		{`8 in [5..8)`, false},
-		{`8 in [5..8]`, true},
+		{`5 in (5..8]`, false, ""},
+		{`5 in [5..8)`, true, ""},
+		{`8 in [5..8)`, false, ""},
+		{`8 in [5..8]`, true, ""},
 
-		{`"a" in ["a".."z"]`, true},
-		{`5 in [3,5, 8]`, true},
-		{`5 in [3, 6, 8]`, false},
-		{`5 in []`, false},
-		//{`not(5 in [3, 5, 9])`, false},
+		{`"a" in ["a".."z"]`, true, ""},
+		{`5 in [3,5, 8]`, true, ""},
+		{`5 in [3, 6, 8]`, false, ""},
+		{`5 in []`, false, ""},
+		//{`not(5 in [3, 5, 9])`, false, ""},
 
 		// if then else
-		{`bind("a", 5); if a > 3 then "larger" else "smaller"`, "larger"},
-		{`bind("a", 5); if a = 5 then "equal" else "not equal"`, "equal"},
-		{`bind("a b", 5); if a b = 5 then "equal" else "not equal"`, "equal"}, // a name has multiple chunks
-
-		{`help(bind)`, "bind value to name in current top scope"},
+		{`if a > 3 then "larger" else "smaller"`, "larger", "{a: 5}"},
+		{`if a = 5 then "equal" else "not equal"`, "equal", "{a: 5}"},
+		{`if a b = 5 then "equal" else "not equal"`, "equal", "{a b: 5}"}, // a name has multiple chunks
 
 		// test not
-		{`not( 5 >  6)`, true},
+		{`not( 5 >  6)`, true, ""},
 
 		// loop functions
-		{`some x in [3, 4, 5] satisfies x >= 4`, N(4)},
-		{`every y in [3, 4, 5] satisfies y >= 4`, []any{N(4), N(5)}},
+		{`some x in [3, 4, 5] satisfies x >= 4`, N(4), ""},
+		{`every y in [3, 4, 5] satisfies y >= 4`, []any{N(4), N(5)}, ""},
 
 		// null check
-		{`a != null and a.b > 10`, false},
-		{`a = null or a.b > 10`, true},
+		{`a != null and a.b > 10`, false, ""},
+		{`a = null or a.b > 10`, true, ""},
 
 		// keyword arguments
-		{`bind("sub", function(a, b) a - b); sub(a: 4, b: 2)`, N(2)},
+		{`sub(a: 4, b: 2)`, N(2), "{sub: (function(a, b) a - b)}"},
 
 		// temporal expressions
-		{`last day of month(@"2020-02-11")`, N(29)},
-		{`last day of month(@"2021-01-07")`, N(31)},
-		{`last day of month(@"2023-06-11")`, N(30)},
-		{`last day of month(@"2023-07-11")`, N(31)},
+		{`last day of month(@"2020-02-11")`, N(29), ""},
+		{`last day of month(@"2021-01-07")`, N(31), ""},
+		{`last day of month(@"2023-06-11")`, N(30), ""},
+		{`last day of month(@"2023-07-11")`, N(31), ""},
 
-		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, MustParseDatetime("2023-07-21T11:54:32@CST")}, // test day/hour/min duration
-		{`@"2023-06-01T10:33:20@CST" + @"P3Y11M"`, MustParseDatetime("2027-05-01T10:33:20@CST")}, // test year/month duration
+		{`@"2023-07-21T13:57:32@CST" - @"PT2H3M"`, MustParseDatetime("2023-07-21T11:54:32@CST"), ""}, // test day/hour/min duration
+		{`@"2023-06-01T10:33:20@CST" + @"P3Y11M"`, MustParseDatetime("2027-05-01T10:33:20@CST"), ""}, // test year/month duration
 
 		// builtin functions
-		{`is defined(x)`, false},
-		{`bind("x", [1, 2, 3]); is defined(x[5])`, false},
-		{`bind("x", {a: 3, b: 5}); is defined(x.c)`, false},
-		{`bind("x", {a: 3, b: 5}); is defined(x.a)`, true},
+		{`is defined(x)`, false, ""},
+		{`is defined(x[5])`, false, "{x: [1, 2, 3]}"},
+		{`is defined(x.c)`, false, "{x: {a: 3, b: 5}}"},
+		{`is defined(x.a)`, true, "{x: {a: 3, b: 5}}"},
 
-		{`bind("x", 666); is defined(x)`, true},        // `x` is bound
-		{`bind("x", 888); is defined(value: x)`, true}, // macro can use keyword arguments
+		{`is defined(x)`, true, "{x: 666}"},        // `x` is bound
+		{`is defined(value: x)`, true, "{x: 888}"}, // macro can use keyword arguments
 
-		{`substring(string: "abcdef", start position: 3, length: 3)`, "cde"},
-		{`substring(string: "abcdef", start position: 200, length: 3)`, ""},
-		{`not({})`, true},
-		{`not({a: 1})`, false},
+		{`substring(string: "abcdef", start position: 3, length: 3)`, "cde", ""},
+		{`substring(string: "abcdef", start position: 200, length: 3)`, "", ""},
+		{`not({})`, true, ""},
+		{`not({a: 1})`, false, ""},
 
 		// list functions
-		{`median([3, 5, 9, 1, "hello", -2])`, N(3)},
+		{`median([3, 5, 9, 1, "hello", -2])`, N(3), ""},
 
-		{`append(["hello"], " ", "world")`, []any{"hello", " ", "world"}},
-		{`concatenate([2, 1], [3])`, []any{N(2), N(1), N(3)}},
-		{`insert before(["hello", "world"], 2, "another")`, []any{"hello", "another", "world"}},
-		{`remove(["hello", "a", "world"], 2)`, []any{"hello", "world"}},
+		{`append(["hello"], " ", "world")`, []any{"hello", " ", "world"}, ""},
+		{`concatenate([2, 1], [3])`, []any{N(2), N(1), N(3)}, ""},
+		{`insert before(["hello", "world"], 2, "another")`, []any{"hello", "another", "world"}, ""},
+		{`remove(["hello", "a", "world"], 2)`, []any{"hello", "world"}, ""},
 
-		{`index of([1,2,3,2],2)`, []any{N(2), N(4)}},
+		{`index of([1,2,3,2],2)`, []any{N(2), N(4)}, ""},
 
-		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []any{N(1), N(2), N(3)}},
-		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []any{"a", "b", "c", "d"}},
-		{`union(["a", "b"], ["b", "c"], ["d"])`, []any{"a", "b", "c", "d"}},
+		{`distinct values([1, 2, 1, 2, 3, 2, 1])`, []any{N(1), N(2), N(3)}, ""},
+		{`flatten([["a"], [["b", ["c"]]], ["d"]])`, []any{"a", "b", "c", "d"}, ""},
+		{`union(["a", "b"], ["b", "c"], ["d"])`, []any{"a", "b", "c", "d"}, ""},
 
-		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []any{"a", "hello", "world"}},
-		{`sort([8, -1, 3], function(x, y) x > y)`, []any{N(8), N(3), N(-1)}},
+		{`sort(["hello", "a", "world"], function(x, y) x < y)`, []any{"a", "hello", "world"}, ""},
+		{`sort([8, -1, 3], function(x, y) x > y)`, []any{N(8), N(3), N(-1)}, ""},
 
-		{`string join(["hello", "world"])`, "helloworld"},
-		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]"},
+		{`string join(["hello", "world"])`, "helloworld", ""},
+		{`string join(["hello", "world"], " ", "[", "]")`, "[hello world]", ""},
 
-		{`or([false, 0, true, false, 1])`, true},
-		{`and([false, 0, true, false, 1])`, false},
-		{`and([true, 1, true, "ok"])`, true},
+		{`or([false, 0, true, false, 1])`, true, ""},
+		{`and([false, 0, true, false, 1])`, false, ""},
+		{`and([true, 1, true, "ok"])`, true, ""},
 
 		// context/map functions
-		{`get value({a: 2}, "b")`, Null},
-		{`get value({a: 2}, "a")`, N(2)},
-		{`get value({a: {b: {c: 4}}}, ["a", "b", "c"])`, N(4)},
-		{`get value({a: {b: {c: 4}}}, ["a", "b"])`, map[string]any{"c": N(4)}},
-		{`get value({a: {b: {c: 4}}}, ["a", "k"])`, Null},
-		{`get value(context put({a: false}, ["b", "c", "d"], 4), ["b", "c"])`, map[string]any{"d": N(4)}},
-		{`context merge([{x:1, y: 0}, {y:2}])`, map[string]any{"x": N(1), "y": N(2)}},
+		{`get value({a: 2}, "b")`, Null, ""},
+		{`get value({a: 2}, "a")`, N(2), ""},
+		{`get value({a: {b: {c: 4}}}, ["a", "b", "c"])`, N(4), ""},
+		{`get value({a: {b: {c: 4}}}, ["a", "b"])`, map[string]any{"c": N(4)}, ""},
+		{`get value({a: {b: {c: 4}}}, ["a", "k"])`, Null, ""},
+		{`get value(context put({a: false}, ["b", "c", "d"], 4), ["b", "c"])`, map[string]any{"d": N(4)}, ""},
+		{`context merge([{x:1, y: 0}, {y:2}])`, map[string]any{"x": N(1), "y": N(2)}, ""},
 
 		// range functions
-		{`before(1, 10)`, true},
-		{`before(10, 1)`, false},
-		{`before([1..5], 10)`, true},
-		{`before(1, [2..5])`, true},
-		{`before(3, [2..5])`, false},
+		{`before(1, 10)`, true, ""},
+		{`before(10, 1)`, false, ""},
+		{`before([1..5], 10)`, true, ""},
+		{`before(1, [2..5])`, true, ""},
+		{`before(3, [2..5])`, false, ""},
 
-		{`before([1..5),[5..10])`, true},
-		{`before([1..5),(5..10])`, true},
-		{`before([1..5],[5..10])`, false},
-		{`before([1..5),(5..10])`, true},
+		{`before([1..5),[5..10])`, true, ""},
+		{`before([1..5),(5..10])`, true, ""},
+		{`before([1..5],[5..10])`, false, ""},
+		{`before([1..5),(5..10])`, true, ""},
 
-		{`after([5..10], [1..5))`, true},
-		{`after((5..10], [1..5))`, true},
-		{`after([5..10], [1..5])`, false},
-		{`after((5..10], [1..5))`, true},
+		{`after([5..10], [1..5))`, true, ""},
+		{`after((5..10], [1..5))`, true, ""},
+		{`after([5..10], [1..5])`, false, ""},
+		{`after((5..10], [1..5))`, true, ""},
 
-		{`meets([1..5], [5..10])`, true},
-		{`meets([1..3], [4..6])`, false},
-		{`meets([1..3], [3..5])`, true},
-		{`meets([1..5], (5..8])`, false},
+		{`meets([1..5], [5..10])`, true, ""},
+		{`meets([1..3], [4..6])`, false, ""},
+		{`meets([1..3], [3..5])`, true, ""},
+		{`meets([1..5], (5..8])`, false, ""},
 
-		{`met by([5..10], [1..5])`, true},
-		{`met by([3..4], [1..2])`, false},
-		{`met by([3..5], [1..3])`, true},
-		{`met by((5..8], [1..5))`, false},
-		{`met by([5..10], [1..5))`, false},
+		{`met by([5..10], [1..5])`, true, ""},
+		{`met by([3..4], [1..2])`, false, ""},
+		{`met by([3..5], [1..3])`, true, ""},
+		{`met by((5..8], [1..5))`, false, ""},
+		{`met by([5..10], [1..5))`, false, ""},
 
-		{`overlaps([5..10], [1..6])`, true},
-		{`overlaps((3..7], [1..4])`, true},
-		{`overlaps([1..3], (3..6])`, false},
-		{`overlaps((5..8], [1..5))`, false},
-		{`overlaps([4..10], [1..5))`, true},
+		{`overlaps([5..10], [1..6])`, true, ""},
+		{`overlaps((3..7], [1..4])`, true, ""},
+		{`overlaps([1..3], (3..6])`, false, ""},
+		{`overlaps((5..8], [1..5))`, false, ""},
+		{`overlaps([4..10], [1..5))`, true, ""},
 
-		{`overlaps before([1..5], [4..10])`, true},
-		{`overlaps before([3..4], [1..2])`, false},
-		{`overlaps before([1..3], (3..5])`, false},
-		{`overlaps before([1..5), (3..8])`, true},
-		{`overlaps before([1..5), [5..10])`, false},
+		{`overlaps before([1..5], [4..10])`, true, ""},
+		{`overlaps before([3..4], [1..2])`, false, ""},
+		{`overlaps before([1..3], (3..5])`, false, ""},
+		{`overlaps before([1..5), (3..8])`, true, ""},
+		{`overlaps before([1..5), [5..10])`, false, ""},
 
-		{`overlaps after([4..10], [1..5])`, true},
-		{`overlaps after([3..4], [1..2])`, false},
-		{`overlaps after([3..5], [1..3))`, false},
-		{`overlaps after((5..8], [1..5))`, false},
-		{`overlaps after([4..10], [1..5))`, true},
+		{`overlaps after([4..10], [1..5])`, true, ""},
+		{`overlaps after([3..4], [1..2])`, false, ""},
+		{`overlaps after([3..5], [1..3))`, false, ""},
+		{`overlaps after((5..8], [1..5))`, false, ""},
+		{`overlaps after([4..10], [1..5))`, true, ""},
 
-		{`finishes(5, [1..5])`, true},
-		{`finishes(10, [1..7])`, false},
-		{`finishes([3..5], [1..5])`, true},
-		{`finishes((1..5], [1..5))`, false},
-		{`finishes([5..10], [1..10))`, false},
+		{`finishes(5, [1..5])`, true, ""},
+		{`finishes(10, [1..7])`, false, ""},
+		{`finishes([3..5], [1..5])`, true, ""},
+		{`finishes((1..5], [1..5))`, false, ""},
+		{`finishes([5..10], [1..10))`, false, ""},
 
-		{`finished by([5..10], 10)`, true},
-		{`finished by([3..4], 2)`, false},
+		{`finished by([5..10], 10)`, true, ""},
+		{`finished by([3..4], 2)`, false, ""},
 
-		{`finished by([3..5], [1..5])`, true},
-		{`finished by((5..8], [1..5))`, false},
-		{`finished by([5..10], (1..10))`, true},
+		{`finished by([3..5], [1..5])`, true, ""},
+		{`finished by((5..8], [1..5))`, false, ""},
+		{`finished by([5..10], (1..10))`, true, ""},
 
-		{`includes([5..10], 6)`, true},
-		{`includes([3..4], 5)`, false},
-		{`includes([1..10], [4..6])`, true},
-		{`includes((5..8], [1..5))`, false},
-		{`includes([1..10], [1..5))`, true},
+		{`includes([5..10], 6)`, true, ""},
+		{`includes([3..4], 5)`, false, ""},
+		{`includes([1..10], [4..6])`, true, ""},
+		{`includes((5..8], [1..5))`, false, ""},
+		{`includes([1..10], [1..5))`, true, ""},
 
-		{`during(5, [1..10])`, true},
-		{`during(12, [1..10])`, false},
-		{`during(1, (1..10])`, false},
-		{`during([4..6], [1..10))`, true},
-		{`during((1..5], (1..10])`, true},
+		{`during(5, [1..10])`, true, ""},
+		{`during(12, [1..10])`, false, ""},
+		{`during(1, (1..10])`, false, ""},
+		{`during([4..6], [1..10))`, true, ""},
+		{`during((1..5], (1..10])`, true, ""},
 
-		{`starts(1, [1..5])`, true},
-		{`starts(1, (1..8])`, false},
-		{`starts((1..5], [1..5])`, false},
-		{`starts([1..10], [1..10])`, true},
-		{`starts((1..10), (1..10))`, true},
+		{`starts(1, [1..5])`, true, ""},
+		{`starts(1, (1..8])`, false, ""},
+		{`starts((1..5], [1..5])`, false, ""},
+		{`starts([1..10], [1..10])`, true, ""},
+		{`starts((1..10), (1..10))`, true, ""},
 
-		{`started by([1..10], 1)`, true},
-		{`started by((1..10], 1)`, false},
-		{`started by([1..10], [1..5])`, true},
-		{`started by((1..10], [1..5))`, false},
-		{`started by([1..10], [1..10))`, true},
+		{`started by([1..10], 1)`, true, ""},
+		{`started by((1..10], 1)`, false, ""},
+		{`started by([1..10], [1..5])`, true, ""},
+		{`started by((1..10], [1..5))`, false, ""},
+		{`started by([1..10], [1..10))`, true, ""},
 
-		{`coincides([1..5], [1..5])`, true},
-		{`coincides((1..5], [1..5))`, false},
-		{`coincides([1..5], [2..6])`, false},
+		{`coincides([1..5], [1..5])`, true, ""},
+		{`coincides((1..5], [1..5))`, false, ""},
+		{`coincides([1..5], [2..6])`, false, ""},
 	}
 
 	for _, p := range evalPairs {
-		res, err := EvalString(p.input)
+		res, err := EvalString(p.input, p.context)
 		if err != nil {
 			fmt.Printf("bad input %s\n", p.input)
 		}

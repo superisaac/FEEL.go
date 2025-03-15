@@ -3,6 +3,7 @@ package feel
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 // values
@@ -588,8 +589,32 @@ func (node FunCall) EvalFunDef(intp *Interpreter, funDef *FunDef) (any, error) {
 	return ret, err
 }
 
-func EvalString(input string) (any, error) {
-	return EvalStringWithScope(input, nil)
+func EvalString(input string, varsList ...string) (any, error) {
+	intp := NewIntepreter()
+	for i, vars := range varsList {
+		if vars == "" {
+			continue
+		}
+		scopeAst, err := ParseString(vars)
+		if err != nil {
+			return nil, err
+		}
+		r, err := scopeAst.Eval(intp)
+		if err != nil {
+			return nil, err
+		}
+		if scope, ok := r.(map[string]any); ok {
+			intp.Push(scope)
+		} else {
+			return nil, fmt.Errorf("the NO. %d scope should be map", i+1)
+		}
+	}
+	ast, err := ParseString(input)
+	if err != nil {
+		return nil, err
+	}
+	r, err := ast.Eval(intp)
+	return r, err
 }
 
 func EvalStringWithScope(input string, scope Scope) (any, error) {

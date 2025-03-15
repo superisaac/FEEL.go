@@ -126,37 +126,37 @@ func GetPrelude() *Prelude {
 }
 
 func (prelude *Prelude) Load() {
-	prelude.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
-		name, _ := args["name"].Eval(intp)
-		strName, ok := name.(string)
-		if !ok {
-			return nil, NewErrTypeMismatch("string")
-		}
-		v, err := args["value"].Eval(intp)
-		if err != nil {
-			return nil, err
-		}
-		intp.Bind(strName, v)
-		return v, nil
-	}).Required("name", "value").Help("bind value to name in current top scope"))
+	// prelude.Bind("bind", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
+	// 	name, _ := args["name"].Eval(intp)
+	// 	strName, ok := name.(string)
+	// 	if !ok {
+	// 		return nil, NewErrTypeMismatch("string")
+	// 	}
+	// 	v, err := args["value"].Eval(intp)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	intp.Bind(strName, v)
+	// 	return v, nil
+	// }).Required("name", "value").Help("bind value to name in current top scope"))
 
-	prelude.Bind("set", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
-		name, _ := args["name"].Eval(intp)
-		strName, ok := name.(string)
-		if !ok {
-			return nil, NewErrTypeMismatch("string")
-		}
-		v, err := args["value"].Eval(intp)
-		if err != nil {
-			return nil, err
-		}
-		if intp.Set(strName, v) {
-			return v, nil
-		} else {
-			intp.Bind(strName, v)
-			return v, nil
-		}
-	}).Required("name", "value").Help("bind value to name in resolved scope, if not found, it's bind to current top scope(the same as 'bind')"))
+	// prelude.Bind("set", NewMacro(func(intp *Interpreter, args map[string]Node, varArgs []Node) (any, error) {
+	// 	name, _ := args["name"].Eval(intp)
+	// 	strName, ok := name.(string)
+	// 	if !ok {
+	// 		return nil, NewErrTypeMismatch("string")
+	// 	}
+	// 	v, err := args["value"].Eval(intp)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if intp.Set(strName, v) {
+	// 		return v, nil
+	// 	} else {
+	// 		intp.Bind(strName, v)
+	// 		return v, nil
+	// 	}
+	// }).Required("name", "value").Help("bind value to name in resolved scope, if not found, it's bind to current top scope(the same as 'bind')"))
 
 	prelude.Bind("block", NewMacro(func(intp *Interpreter, args map[string]Node, exprlist []Node) (interface{}, error) {
 		var lastValue interface{}

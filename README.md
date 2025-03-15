@@ -19,9 +19,12 @@ interpreter.
 % bin/feel -c '(function(a, b) a + b)(5, 8)'
 13
 
+% bin/feel -c 'if a > 3 then "larger" else "smaller"' -vars '{a: 5}'
+"larger"
+
 # dump AST tree instead of evaluating the script
-% bin/feel -c 'bind("a", 5); if a > 3 then "larger" else "smaller"' -ast
-(explist (call bind ["a", 5]) (if (> a 3) "larger"  "smaller"))
+% bin/feel -c 'if a > 3 then "larger" else "smaller"' -ast
+(explist (if (> a 3) "larger"  "smaller"))
 
 % bin/feel -c 'some x in [3, 4, 8, 9] satisfies x % 2 = 0'
 4
