@@ -207,7 +207,7 @@ func TestEvalPairs(t *testing.T) {
 	for _, p := range evalPairs {
 		res, err := EvalString(p.input, p.context)
 		if err != nil {
-			fmt.Printf("bad input %s\n", p.input)
+			fmt.Printf("bad input '%s'\n", p.input)
 		}
 		assert.NilError(t, err)
 		assert.DeepEqual(t, p.expect, res)

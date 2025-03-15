@@ -80,34 +80,21 @@ func (p Parser) CurrentToken() ScannerToken {
 
 func (p *Parser) Parse() (Node, error) {
 	p.scanner.Next()
-	var exps []Node
-
-	for !p.CurrentToken().Expect(TokenEOF) {
-		if p.CurrentToken().Expect(";") {
-			p.scanner.Next()
-		} else {
-			exp, err := p.parseUnaryTest()
-			if err != nil {
-				return nil, err
-			}
-			exps = append(exps, exp)
-		}
+	if p.CurrentToken().Expect(TokenEOF) {
+		return &EmptyNode{}, nil
 	}
-
-	if len(exps) == 1 {
-		return exps[0], nil
-	} else {
-		return &ExprList{
-			Elements: exps,
-		}, nil
+	exp, err := p.parseUnaryTests()
+	if err != nil {
+		return nil, err
 	}
+	return exp, err
 }
 
 func (p Parser) startTextRange() TextRange {
 	return TextRange{Start: p.CurrentToken().Pos}
 }
 
-func (p *Parser) parseUnaryTestElement() (Node, error) {
+func (p *Parser) parseUnaryTest() (Node, error) {
 	if p.CurrentToken().Expect(">", ">=", "<", "<=", "!=", "=") {
 		textRange := p.startTextRange()
 		op := p.CurrentToken().Kind
@@ -129,9 +116,9 @@ func (p *Parser) parseUnaryTestElement() (Node, error) {
 	}
 }
 
-func (p *Parser) parseUnaryTest() (Node, error) {
+func (p *Parser) parseUnaryTests() (Node, error) {
 	textRange := p.startTextRange()
-	exp, err := p.parseUnaryTestElement()
+	exp, err := p.parseUnaryTest()
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +128,7 @@ func (p *Parser) parseUnaryTest() (Node, error) {
 		for p.CurrentToken().Expect(",") {
 			p.scanner.Next()
 
-			uexp, err := p.parseUnaryTestElement()
+			uexp, err := p.parseUnaryTest()
 			if err != nil {
 				return nil, err
 			}

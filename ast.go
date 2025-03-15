@@ -293,22 +293,16 @@ func (node ArrayNode) Repr() string {
 	return fmt.Sprintf("[%s]", strings.Join(s, ", "))
 }
 
-// ExpressList
-type ExprList struct {
-	Elements []Node
-
+// Empty node
+type EmptyNode struct {
 	textRange TextRange
 }
 
-func (node ExprList) TextRange() TextRange {
+func (node EmptyNode) TextRange() TextRange {
 	return node.textRange
 }
-func (node ExprList) Repr() string {
-	s := make([]string, 0)
-	for _, elem := range node.Elements {
-		s = append(s, elem.Repr())
-	}
-	return fmt.Sprintf("(explist %s)", strings.Join(s, " "))
+func (node EmptyNode) Repr() string {
+	return ""
 }
 
 // MultiTests

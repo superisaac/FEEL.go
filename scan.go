@@ -52,7 +52,7 @@ var tokenMatchers = []tokenMatcher{
 	match("..", ""),
 	match(".", ""),
 	match(",", ""),
-	match(";", ""),
+	//match(";", ""),
 
 	match(">=", ""),
 	match(">", ""),
