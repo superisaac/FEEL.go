@@ -11,8 +11,8 @@ type EvalError struct {
 	Message string
 }
 
-func (self EvalError) Error() string {
-	return fmt.Sprintf("%d %s, %s", self.Code, self.Short, self.Message)
+func (err EvalError) Error() string {
+	return fmt.Sprintf("%d %s, %s", err.Code, err.Short, err.Message)
 }
 
 func NewEvalError(code int, short string, msgs ...string) *EvalError {

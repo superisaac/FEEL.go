@@ -12,8 +12,8 @@ type RangeValue struct {
 	End     any
 }
 
-func (self RangeValue) BeforePoint(p any) (bool, error) {
-	pos, err := self.Position(p)
+func (rv RangeValue) BeforePoint(p any) (bool, error) {
+	pos, err := rv.Position(p)
 	if err != nil {
 		return false, err
 	}
@@ -21,21 +21,21 @@ func (self RangeValue) BeforePoint(p any) (bool, error) {
 
 }
 
-func (self RangeValue) AfterPoint(p any) (bool, error) {
-	pos, err := self.Position(p)
+func (rv RangeValue) AfterPoint(p any) (bool, error) {
+	pos, err := rv.Position(p)
 	if err != nil {
 		return false, err
 	}
 	return pos < 0, nil
 }
 
-func (self RangeValue) BeforeRange(other RangeValue) (bool, error) {
-	r, err := compareInterfaces(self.End, other.Start)
+func (rv RangeValue) BeforeRange(other RangeValue) (bool, error) {
+	r, err := compareInterfaces(rv.End, other.Start)
 	if err != nil {
 		return false, err
 	}
 
-	if !self.EndOpen && !other.StartOpen {
+	if !rv.EndOpen && !other.StartOpen {
 		// two ranges meet
 		return r < 0, nil
 	} else {
@@ -43,24 +43,24 @@ func (self RangeValue) BeforeRange(other RangeValue) (bool, error) {
 	}
 }
 
-func (self RangeValue) AfterRange(other RangeValue) (bool, error) {
-	r, err := compareInterfaces(self.Start, other.End)
+func (rv RangeValue) AfterRange(other RangeValue) (bool, error) {
+	r, err := compareInterfaces(rv.Start, other.End)
 	if err != nil {
 		return false, err
 	}
-	if !self.StartOpen && !other.EndOpen {
+	if !rv.StartOpen && !other.EndOpen {
 		return r > 0, nil
 	} else {
 		return r >= 0, nil
 	}
 }
 
-func (self RangeValue) Position(p any) (int, error) {
-	cmpStart, err := compareInterfaces(p, self.Start)
+func (rv RangeValue) Position(p any) (int, error) {
+	cmpStart, err := compareInterfaces(p, rv.Start)
 	if err != nil {
 		return 0, err
 	}
-	if self.StartOpen {
+	if rv.StartOpen {
 		if cmpStart <= 0 {
 			return -1, nil
 		}
@@ -72,25 +72,25 @@ func (self RangeValue) Position(p any) (int, error) {
 		}
 	}
 
-	cmpEnd, err := compareInterfaces(p, self.End)
+	cmpEnd, err := compareInterfaces(p, rv.End)
 	if err != nil {
 		return 0, err
 	}
-	if self.EndOpen && cmpEnd >= 0 {
+	if rv.EndOpen && cmpEnd >= 0 {
 		return 1, nil
-	} else if !self.EndOpen && cmpEnd > 0 {
+	} else if !rv.EndOpen && cmpEnd > 0 {
 		return 1, nil
 	}
 	return 0, nil
 
 }
 
-func (self RangeValue) Includes(other RangeValue) (bool, error) {
-	cmpStart, err := compareInterfaces(self.Start, other.Start)
+func (rv RangeValue) Includes(other RangeValue) (bool, error) {
+	cmpStart, err := compareInterfaces(rv.Start, other.Start)
 	if err != nil {
 		return false, err
 	}
-	cmpEnd, err := compareInterfaces(self.End, other.End)
+	cmpEnd, err := compareInterfaces(rv.End, other.End)
 	if err != nil {
 		return false, err
 	}
@@ -98,46 +98,46 @@ func (self RangeValue) Includes(other RangeValue) (bool, error) {
 		return false, nil
 	}
 
-	if !(cmpStart < 0 || !self.StartOpen || other.StartOpen) {
+	if !(cmpStart < 0 || !rv.StartOpen || other.StartOpen) {
 		return false, nil
 	}
 
-	if !(cmpEnd > 0 || !self.EndOpen || other.EndOpen) {
+	if !(cmpEnd > 0 || !rv.EndOpen || other.EndOpen) {
 		return false, nil
 	}
 	return true, nil
 }
 
-func (self RangeValue) Contains(p any) bool {
-	r, err := self.Position(p)
+func (rv RangeValue) Contains(p any) bool {
+	r, err := rv.Position(p)
 	if err != nil {
 		panic(err)
 	}
 	return r == 0
 }
 
-func (self RangeValue) overlapsBefore(other RangeValue) (bool, error) {
-	pos, err := other.Position(self.End)
+func (rv RangeValue) overlapsBefore(other RangeValue) (bool, error) {
+	pos, err := other.Position(rv.End)
 	if err != nil {
 		return false, err
 	}
 	if pos != 0 {
 		return false, nil
-	} else if self.EndOpen && CompareValues(self.End, other.Start) == 0 {
+	} else if rv.EndOpen && CompareValues(rv.End, other.Start) == 0 {
 		return false, nil
 	} else {
 		return true, nil
 	}
 }
 
-func (self RangeValue) overlapsAfter(other RangeValue) (bool, error) {
-	pos, err := other.Position(self.Start)
+func (rv RangeValue) overlapsAfter(other RangeValue) (bool, error) {
+	pos, err := other.Position(rv.Start)
 	if err != nil {
 		return false, err
 	}
 	if pos != 0 {
 		return false, nil
-	} else if self.EndOpen && CompareValues(self.Start, other.End) == 0 {
+	} else if rv.EndOpen && CompareValues(rv.Start, other.End) == 0 {
 		return false, nil
 	} else {
 		return true, nil

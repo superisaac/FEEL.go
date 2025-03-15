@@ -35,11 +35,11 @@ type Binop struct {
 	textRange TextRange
 }
 
-func (self Binop) TextRange() TextRange {
-	return self.textRange
+func (op Binop) TextRange() TextRange {
+	return op.textRange
 }
-func (self Binop) Repr() string {
-	return fmt.Sprintf("(%s %s %s)", self.Op, self.Left.Repr(), self.Right.Repr())
+func (op Binop) Repr() string {
+	return fmt.Sprintf("(%s %s %s)", op.Op, op.Left.Repr(), op.Right.Repr())
 }
 
 // function call
@@ -50,12 +50,12 @@ type DotOp struct {
 	textRange TextRange
 }
 
-func (self DotOp) TextRange() TextRange {
-	return self.textRange
+func (op DotOp) TextRange() TextRange {
+	return op.textRange
 }
 
-func (self DotOp) Repr() string {
-	return fmt.Sprintf("(. %s %s)", self.Left.Repr(), self.Attr)
+func (op DotOp) Repr() string {
+	return fmt.Sprintf("(. %s %s)", op.Left.Repr(), op.Attr)
 }
 
 // function call
@@ -72,22 +72,22 @@ type FunCall struct {
 	textRange TextRange
 }
 
-func (self FunCall) TextRange() TextRange {
-	return self.textRange
+func (fc FunCall) TextRange() TextRange {
+	return fc.textRange
 }
-func (self FunCall) Repr() string {
+func (fc FunCall) Repr() string {
 	argReprs := make([]string, 0)
-	if self.keywordArgs {
-		for _, arg := range self.Args {
+	if fc.keywordArgs {
+		for _, arg := range fc.Args {
 			s := fmt.Sprintf("(%s %s)", arg.argName, arg.arg.Repr())
 			argReprs = append(argReprs, s)
 		}
 	} else {
-		for _, arg := range self.Args {
+		for _, arg := range fc.Args {
 			argReprs = append(argReprs, arg.arg.Repr())
 		}
 	}
-	return fmt.Sprintf("(call %s [%s])", self.FunRef.Repr(), strings.Join(argReprs, ", "))
+	return fmt.Sprintf("(call %s [%s])", fc.FunRef.Repr(), strings.Join(argReprs, ", "))
 }
 
 // function definition
@@ -98,12 +98,12 @@ type FunDef struct {
 	textRange TextRange
 }
 
-func (self FunDef) TextRange() TextRange {
-	return self.textRange
+func (fdef FunDef) TextRange() TextRange {
+	return fdef.textRange
 }
 
-func (self FunDef) Repr() string {
-	return fmt.Sprintf("(function [%s] %s)", strings.Join(self.Args, ", "), self.Body.Repr())
+func (fdef FunDef) Repr() string {
+	return fmt.Sprintf("(function [%s] %s)", strings.Join(fdef.Args, ", "), fdef.Body.Repr())
 }
 
 // variable
@@ -112,15 +112,15 @@ type Var struct {
 	textRange TextRange
 }
 
-func (self Var) TextRange() TextRange {
-	return self.textRange
+func (v Var) TextRange() TextRange {
+	return v.textRange
 }
 
-func (self Var) Repr() string {
-	if strings.Contains(self.Name, " ") {
-		return fmt.Sprintf("`%s`", self.Name)
+func (v Var) Repr() string {
+	if strings.Contains(v.Name, " ") {
+		return fmt.Sprintf("`%s`", v.Name)
 	}
-	return self.Name
+	return v.Name
 }
 
 // number
@@ -130,12 +130,12 @@ type NumberNode struct {
 	textRange TextRange
 }
 
-func (self NumberNode) TextRange() TextRange {
-	return self.textRange
+func (node NumberNode) TextRange() TextRange {
+	return node.textRange
 }
 
-func (self NumberNode) Repr() string {
-	return self.Value
+func (node NumberNode) Repr() string {
+	return node.Value
 }
 
 // bool
@@ -145,11 +145,11 @@ type BoolNode struct {
 	textRange TextRange
 }
 
-func (self BoolNode) TextRange() TextRange {
-	return self.textRange
+func (node BoolNode) TextRange() TextRange {
+	return node.textRange
 }
-func (self BoolNode) Repr() string {
-	if self.Value {
+func (node BoolNode) Repr() string {
+	if node.Value {
 		return "true"
 	} else {
 		return "false"
@@ -161,12 +161,12 @@ type NullNode struct {
 	textRange TextRange
 }
 
-func (self NullNode) Repr() string {
+func (node NullNode) Repr() string {
 	return "null"
 }
 
-func (self NullNode) TextRange() TextRange {
-	return self.textRange
+func (node NullNode) TextRange() TextRange {
+	return node.textRange
 }
 
 // string
@@ -176,15 +176,15 @@ type StringNode struct {
 	textRange TextRange
 }
 
-func (self StringNode) Repr() string {
-	return self.Value
+func (node StringNode) Repr() string {
+	return node.Value
 }
-func (self StringNode) TextRange() TextRange {
-	return self.textRange
+func (node StringNode) TextRange() TextRange {
+	return node.textRange
 }
-func (self StringNode) Content() string {
+func (node StringNode) Content() string {
 	// trim leading and trailing quotes
-	s := self.Value[1 : len(self.Value)-1]
+	s := node.Value[1 : len(node.Value)-1]
 
 	s = strings.ReplaceAll(s, "\\n", "\n")
 	s = strings.ReplaceAll(s, "\\\"", "\"")
@@ -204,12 +204,12 @@ type MapNode struct {
 	textRange TextRange
 }
 
-func (self MapNode) TextRange() TextRange {
-	return self.textRange
+func (node MapNode) TextRange() TextRange {
+	return node.textRange
 }
-func (self MapNode) Repr() string {
+func (node MapNode) Repr() string {
 	var ss []string
-	for _, item := range self.Values {
+	for _, item := range node.Values {
 		s := fmt.Sprintf("(\"%s\" %s)", item.Name, item.Value.Repr())
 		ss = append(ss, s)
 	}
@@ -222,15 +222,15 @@ type TemporalNode struct {
 	textRange TextRange
 }
 
-func (self TemporalNode) TextRange() TextRange {
-	return self.textRange
+func (node TemporalNode) TextRange() TextRange {
+	return node.textRange
 }
-func (self TemporalNode) Repr() string {
-	return self.Value
+func (node TemporalNode) Repr() string {
+	return node.Value
 }
 
-func (self TemporalNode) Content() string {
-	return self.Value[2 : len(self.Value)-1]
+func (node TemporalNode) Content() string {
+	return node.Value[2 : len(node.Value)-1]
 }
 
 // range
@@ -244,19 +244,19 @@ type RangeNode struct {
 	textRange TextRange
 }
 
-func (self RangeNode) TextRange() TextRange {
-	return self.textRange
+func (node RangeNode) TextRange() TextRange {
+	return node.textRange
 }
-func (self RangeNode) Repr() string {
+func (node RangeNode) Repr() string {
 	startQuote := "["
-	if self.StartOpen {
+	if node.StartOpen {
 		startQuote = "("
 	}
 	endQuote := "]"
-	if self.EndOpen {
+	if node.EndOpen {
 		endQuote = ")"
 	}
-	return fmt.Sprintf("%s%s..%s%s", startQuote, self.Start.Repr(), self.End.Repr(), endQuote)
+	return fmt.Sprintf("%s%s..%s%s", startQuote, node.Start.Repr(), node.End.Repr(), endQuote)
 }
 
 // if expression
@@ -268,11 +268,11 @@ type IfExpr struct {
 	textRange TextRange
 }
 
-func (self IfExpr) TextRange() TextRange {
-	return self.textRange
+func (node IfExpr) TextRange() TextRange {
+	return node.textRange
 }
-func (self IfExpr) Repr() string {
-	return fmt.Sprintf("(if %s %s %s)", self.Cond.Repr(), self.ThenBranch.Repr(), self.ElseBranch.Repr())
+func (node IfExpr) Repr() string {
+	return fmt.Sprintf("(if %s %s %s)", node.Cond.Repr(), node.ThenBranch.Repr(), node.ElseBranch.Repr())
 }
 
 // array
@@ -282,12 +282,12 @@ type ArrayNode struct {
 	textRange TextRange
 }
 
-func (self ArrayNode) TextRange() TextRange {
-	return self.textRange
+func (node ArrayNode) TextRange() TextRange {
+	return node.textRange
 }
-func (self ArrayNode) Repr() string {
+func (node ArrayNode) Repr() string {
 	s := make([]string, 0)
-	for _, elem := range self.Elements {
+	for _, elem := range node.Elements {
 		s = append(s, elem.Repr())
 	}
 	return fmt.Sprintf("[%s]", strings.Join(s, ", "))
@@ -300,12 +300,12 @@ type ExprList struct {
 	textRange TextRange
 }
 
-func (self ExprList) TextRange() TextRange {
-	return self.textRange
+func (node ExprList) TextRange() TextRange {
+	return node.textRange
 }
-func (self ExprList) Repr() string {
+func (node ExprList) Repr() string {
 	s := make([]string, 0)
-	for _, elem := range self.Elements {
+	for _, elem := range node.Elements {
 		s = append(s, elem.Repr())
 	}
 	return fmt.Sprintf("(explist %s)", strings.Join(s, " "))
@@ -317,12 +317,12 @@ type MultiTests struct {
 	textRange TextRange
 }
 
-func (self MultiTests) TextRange() TextRange {
-	return self.textRange
+func (node MultiTests) TextRange() TextRange {
+	return node.textRange
 }
-func (self MultiTests) Repr() string {
+func (node MultiTests) Repr() string {
 	s := make([]string, 0)
-	for _, elem := range self.Elements {
+	for _, elem := range node.Elements {
 		s = append(s, elem.Repr())
 	}
 	return fmt.Sprintf("(multitests %s)", strings.Join(s, " "))
@@ -336,11 +336,11 @@ type ForExpr struct {
 	textRange  TextRange
 }
 
-func (self ForExpr) TextRange() TextRange {
-	return self.textRange
+func (node ForExpr) TextRange() TextRange {
+	return node.textRange
 }
-func (self ForExpr) Repr() string {
-	return fmt.Sprintf("(for %s %s %s)", self.Varname, self.ListExpr.Repr(), self.ReturnExpr.Repr())
+func (node ForExpr) Repr() string {
+	return fmt.Sprintf("(for %s %s %s)", node.Varname, node.ListExpr.Repr(), node.ReturnExpr.Repr())
 }
 
 // Some expression
@@ -351,11 +351,11 @@ type SomeExpr struct {
 	textRange  TextRange
 }
 
-func (self SomeExpr) TextRange() TextRange {
-	return self.textRange
+func (node SomeExpr) TextRange() TextRange {
+	return node.textRange
 }
-func (self SomeExpr) Repr() string {
-	return fmt.Sprintf("(some \"%s\" %s %s)", self.Varname, self.ListExpr.Repr(), self.FilterExpr.Repr())
+func (node SomeExpr) Repr() string {
+	return fmt.Sprintf("(some \"%s\" %s %s)", node.Varname, node.ListExpr.Repr(), node.FilterExpr.Repr())
 }
 
 // Every expression
@@ -367,9 +367,9 @@ type EveryExpr struct {
 	textRange TextRange
 }
 
-func (self EveryExpr) TextRange() TextRange {
-	return self.textRange
+func (node EveryExpr) TextRange() TextRange {
+	return node.textRange
 }
-func (self EveryExpr) Repr() string {
-	return fmt.Sprintf("(every \"%s\" %s %s)", self.Varname, self.ListExpr.Repr(), self.FilterExpr.Repr())
+func (node EveryExpr) Repr() string {
+	return fmt.Sprintf("(every \"%s\" %s %s)", node.Varname, node.ListExpr.Repr(), node.FilterExpr.Repr())
 }

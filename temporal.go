@@ -27,8 +27,8 @@ type FEELTime struct {
 	t time.Time
 }
 
-func (self FEELTime) Time() time.Time {
-	return self.t
+func (st FEELTime) Time() time.Time {
+	return st.t
 }
 
 var timePatterns = []string{
@@ -46,30 +46,30 @@ func ParseTime(temporalStr string) (*FEELTime, error) {
 	return nil, ErrParseTemporal
 }
 
-func (self FEELTime) GetAttr(name string) (interface{}, bool) {
+func (st FEELTime) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "hour":
-		return self.t.Hour(), true
+		return st.t.Hour(), true
 	case "minute":
-		return self.t.Minute(), true
+		return st.t.Minute(), true
 	case "second":
-		return self.t.Second(), true
+		return st.t.Second(), true
 	case "timezone":
-		zoneName, _ := self.t.Zone()
+		zoneName, _ := st.t.Zone()
 		return zoneName, true
 	case "timezone offset":
-		_, offset := self.t.Zone()
+		_, offset := st.t.Zone()
 		return offset, true
 	}
 	return nil, false
 }
 
-func (self FEELTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(self.String())
+func (st FEELTime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(st.String())
 }
 
-func (self FEELTime) String() string {
-	return self.t.Format("15:04:05-07:00")
+func (st FEELTime) String() string {
+	return st.t.Format("15:04:05-07:00")
 }
 
 // Date
@@ -77,28 +77,28 @@ type FEELDate struct {
 	t time.Time
 }
 
-func (self FEELDate) Date() time.Time {
-	return self.t
+func (date FEELDate) Date() time.Time {
+	return date.t
 }
 
-func (self FEELDate) GetAttr(name string) (interface{}, bool) {
+func (date FEELDate) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "year":
-		return self.t.Year(), true
+		return date.t.Year(), true
 	case "month":
-		return self.t.Month(), true
+		return date.t.Month(), true
 	case "day":
-		return self.t.Day(), true
+		return date.t.Day(), true
 	}
 	return nil, false
 }
 
-func (self FEELDate) String() string {
-	return self.t.Format("2006-01-02")
+func (date FEELDate) String() string {
+	return date.t.Format("2006-01-02")
 }
 
-func (self FEELDate) MarshalJSON() ([]byte, error) {
-	return json.Marshal(self.String())
+func (date FEELDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(date.String())
 }
 
 var datePatterns = []string{
@@ -119,64 +119,64 @@ type FEELDatetime struct {
 	t time.Time
 }
 
-func (self FEELDatetime) Time() time.Time {
-	return self.t
+func (sdt FEELDatetime) Time() time.Time {
+	return sdt.t
 }
 
-func (self FEELDatetime) Date() time.Time {
-	return self.t
+func (sdt FEELDatetime) Date() time.Time {
+	return sdt.t
 }
 
-func (self FEELDatetime) Equal(other FEELDatetime) bool {
-	return self.t.Equal(other.t)
+func (sdt FEELDatetime) Equal(other FEELDatetime) bool {
+	return sdt.t.Equal(other.t)
 }
 
-func (self FEELDatetime) Compare(other FEELDatetime) int {
-	if self.t.Equal(other.t) {
+func (sdt FEELDatetime) Compare(other FEELDatetime) int {
+	if sdt.t.Equal(other.t) {
 		return 0
-	} else if self.t.Before(other.t) {
+	} else if sdt.t.Before(other.t) {
 		return -1
 	} else {
 		return 1
 	}
 }
 
-func (self FEELDatetime) GetAttr(name string) (interface{}, bool) {
+func (sdt FEELDatetime) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "year":
-		return self.t.Year(), true
+		return sdt.t.Year(), true
 	case "month":
-		return self.t.Month(), true
+		return sdt.t.Month(), true
 	case "day":
-		return self.t.Day(), true
+		return sdt.t.Day(), true
 	case "hour":
-		return self.t.Hour(), true
+		return sdt.t.Hour(), true
 	case "minute":
-		return self.t.Minute(), true
+		return sdt.t.Minute(), true
 	case "second":
-		return self.t.Second(), true
+		return sdt.t.Second(), true
 	case "timezone":
-		zoneName, _ := self.t.Zone()
+		zoneName, _ := sdt.t.Zone()
 		return zoneName, true
 	case "timezone offset":
-		_, offset := self.t.Zone()
+		_, offset := sdt.t.Zone()
 		return offset, true
 	}
 	return nil, false
 }
 
-func (self FEELDatetime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(self.String())
+func (sdt FEELDatetime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(sdt.String())
 }
 
-func (self FEELDatetime) String() string {
-	return self.t.Format("2006-01-02T15:04:05@MST")
+func (sdt FEELDatetime) String() string {
+	return sdt.t.Format("2006-01-02T15:04:05@MST")
 }
 
-func (self *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
+func (sdt *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
 	if dur.Years > 0 || dur.Months > 0 {
 		durMonths := dur.Years*12 + dur.Months
-		timeMonths := self.t.Year()*12 + int(self.t.Month()-1)
+		timeMonths := sdt.t.Year()*12 + int(sdt.t.Month()-1)
 
 		newTimeMonths := timeMonths + durMonths
 		if dur.Neg {
@@ -185,16 +185,16 @@ func (self *FEELDatetime) Add(dur *FEELDuration) *FEELDatetime {
 		return &FEELDatetime{
 			t: time.Date(
 				newTimeMonths/12, time.Month(newTimeMonths%12+1),
-				self.t.Day(), self.t.Hour(), self.t.Minute(),
-				self.t.Second(), self.t.Nanosecond(),
-				self.t.Location()),
+				sdt.t.Day(), sdt.t.Hour(), sdt.t.Minute(),
+				sdt.t.Second(), sdt.t.Nanosecond(),
+				sdt.t.Location()),
 		}
 	}
-	return &FEELDatetime{t: self.t.Add(dur.Duration())}
+	return &FEELDatetime{t: sdt.t.Add(dur.Duration())}
 }
 
-func (self *FEELDatetime) Sub(v HasTime) *FEELDuration {
-	delta := self.t.Sub(v.Time())
+func (sdt *FEELDatetime) Sub(v HasTime) *FEELDuration {
+	delta := sdt.t.Sub(v.Time())
 	return NewFEELDuration(delta)
 }
 
@@ -248,69 +248,69 @@ func NewFEELDuration(dur time.Duration) *FEELDuration {
 	return d
 }
 
-func (self FEELDuration) GetAttr(name string) (interface{}, bool) {
+func (dur FEELDuration) GetAttr(name string) (interface{}, bool) {
 	switch name {
 	case "years":
-		return self.Years, true
+		return dur.Years, true
 	case "months":
-		return self.Months, true
+		return dur.Months, true
 	case "days":
-		return self.Days, true
+		return dur.Days, true
 	case "hours":
-		return self.Hours, true
+		return dur.Hours, true
 	case "minutes":
-		return self.Minutes, true
+		return dur.Minutes, true
 	case "seconds":
-		return self.Seconds, true
+		return dur.Seconds, true
 	}
 	return nil, false
 }
 
-func (self FEELDuration) MarshalJSON() ([]byte, error) {
-	return json.Marshal(self.String())
+func (dur FEELDuration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(dur.String())
 }
 
-func (self FEELDuration) Duration() time.Duration {
-	// self.Year and self.Month
-	dv := (time.Duration(self.Days*24+self.Hours)*time.Hour +
-		time.Duration(self.Minutes)*time.Minute +
-		time.Duration(self.Seconds)*time.Second)
-	if self.Neg {
+func (dur FEELDuration) Duration() time.Duration {
+	// dur.Year and dur.Month
+	dv := (time.Duration(dur.Days*24+dur.Hours)*time.Hour +
+		time.Duration(dur.Minutes)*time.Minute +
+		time.Duration(dur.Seconds)*time.Second)
+	if dur.Neg {
 		dv = -dv
 	}
 	return dv
 }
 
-func (self *FEELDuration) Negative() *FEELDuration {
-	neg := *self
-	neg.Neg = !self.Neg
+func (dur *FEELDuration) Negative() *FEELDuration {
+	neg := *dur
+	neg.Neg = !dur.Neg
 	return &neg
 }
 
-func (self FEELDuration) String() string {
+func (dur FEELDuration) String() string {
 	sYear, sMonth, sDay, sHour, sMinute, sSecond := "", "", "", "", "", ""
 	sNeg := ""
-	if self.Neg {
+	if dur.Neg {
 		sNeg = "-"
 	}
-	if self.Years != 0 {
-		sYear = fmt.Sprintf("%dY", self.Years)
+	if dur.Years != 0 {
+		sYear = fmt.Sprintf("%dY", dur.Years)
 	}
-	if self.Months != 0 {
-		sMonth = fmt.Sprintf("%dM", self.Months)
+	if dur.Months != 0 {
+		sMonth = fmt.Sprintf("%dM", dur.Months)
 	}
-	if self.Days != 0 {
-		sDay = fmt.Sprintf("%dD", self.Days)
+	if dur.Days != 0 {
+		sDay = fmt.Sprintf("%dD", dur.Days)
 	}
 
-	if self.Hours != 0 {
-		sHour = fmt.Sprintf("%dH", self.Hours)
+	if dur.Hours != 0 {
+		sHour = fmt.Sprintf("%dH", dur.Hours)
 	}
-	if self.Minutes != 0 {
-		sMinute = fmt.Sprintf("%dM", self.Minutes)
+	if dur.Minutes != 0 {
+		sMinute = fmt.Sprintf("%dM", dur.Minutes)
 	}
-	if self.Seconds != 0 {
-		sSecond = fmt.Sprintf("%dS", self.Seconds)
+	if dur.Seconds != 0 {
+		sSecond = fmt.Sprintf("%dS", dur.Seconds)
 	}
 	if sYear != "" || sMonth != "" {
 		return fmt.Sprintf("%sP%s%s", sNeg, sYear, sMonth)

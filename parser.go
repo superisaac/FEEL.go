@@ -4,9 +4,7 @@ package feel
 // for BNF forms and handbook refer to https://kiegroup.github.io/dmn-feel-handbook
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
 	"runtime"
 	"strings"
 )
@@ -279,15 +277,13 @@ func (p *Parser) parseFuncallOrIndexOrDot() (Node, error) {
 	}
 }
 
-var funcallTrailing = regexp.MustCompile(`\s*\($`)
-
+// var funcallTrailing = regexp.MustCompile(`\s*\($`)
 // func (p *Parser) parseFuncall() (Node, error) {
 // 	funcallWithRbracket := p.CurrentToken().Value
 // 	funcName := funcallTrailing.ReplaceAllString(funcallWithRbracket, "")
 // 	textRange := TextRange{Start: Node.TextRange().Start, End: p.CurrentToken().Pos}
 // 	return p.parseFuncallRest(&Var{Name: funcName, textRange: })
-
-// }
+// // }
 
 func (p *Parser) parseFunccallArg() (funcallArg, error) {
 	arg, err := p.expression()
@@ -716,6 +712,9 @@ func (p *Parser) parseForExpr() (Node, error) {
 	rng := p.startTextRange()
 	p.scanner.Next()
 	varName, err := p.parseName("in", "for")
+	if err != nil {
+		return nil, err
+	}
 
 	if !p.CurrentToken().ExpectKeywords("in") {
 		return nil, p.Unexpected("in")
@@ -831,7 +830,7 @@ func (p *Parser) parseFunDef() (Node, error) {
 		}
 	}
 	if isdup, name := hasDupName(args); isdup {
-		return nil, errors.New(fmt.Sprintf("function arg name '%s' duplicates", name))
+		return nil, fmt.Errorf("function arg name '%s' duplicates", name)
 	}
 
 	if p.CurrentToken().Expect(")") {
